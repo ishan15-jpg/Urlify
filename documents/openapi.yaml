@@ -1,0 +1,1814 @@
+openapi: 3.1.0
+info:
+  title: Urlify API
+  description: |
+    Unified API specification for the Urlify platform, covering two services sharing the same API gateway:
+    - **Authify**: Authentication and User Management.
+    - **Snip**: URL Shortening and Redirection.
+
+    ### Authentication
+    Protected endpoints require a Bearer JWT in the `Authorization` header:
+    ```http
+    Authorization: Bearer <access_token>
+    ```
+    Access tokens expire in 15 minutes. Use `POST /auth/refresh` to obtain a new token.
+
+    ### Standard Response Envelope
+    All responses (success and error) follow a standard envelope.
+
+    **Success Response:**
+    ```json
+    {
+      "success": true,
+      "statusCode": 200,
+      "message": "Human-readable message",
+      "data": {},
+      "meta": {
+        "requestId": "req_7c2563a341704890",
+        "timestamp": "2026-06-29T10:15:30.000Z"
+      }
+    }
+    ```
+
+    **Error Response:**
+    ```json
+    {
+      "success": false,
+      "statusCode": 400,
+      "error": "BadRequest",
+      "message": "Human-readable error message",
+      "path": "/api/v1/auth/login",
+      "meta": {
+        "requestId": "req_1ec13c7a144b4c1a",
+        "timestamp": "2026-06-29T10:15:30.000Z"
+      }
+    }
+    ```
+  version: 1.0.0
+servers:
+  - url: https://api.yourapp.com/api/v1
+    description: Primary API Gateway URL
+tags:
+  - name: Authify
+    description: Authentication & User Management APIs
+  - name: Snip
+    description: URL Shortening, Analytics, & Redirection APIs
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authify
+      summary: Log in user
+      description: |
+        Authenticates a user with email and password, and issues an access token.
+        Sets a `refreshToken` cookie.
+        
+        *Security Note:* Returns a generic 401 message for both "user not found" and "wrong password" to prevent account enumeration.
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Registered user email
+                  example: ishan@example.com
+                password:
+                  type: string
+                  format: password
+                  description: Account password
+                  example: StrongP@ssw0rd!
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: httpOnly, Secure, SameSite=Strict cookie setting the `refreshToken`
+              schema:
+                type: string
+                example: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Login successful
+                  data:
+                    type: object
+                    required:
+                      - user
+                      - accessToken
+                      - expiresIn
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      accessToken:
+                        type: string
+                        description: JWT Access Token
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expiresIn:
+                        type: integer
+                        description: Access token lifetime in seconds (15 minutes = 900 seconds)
+                        example: 900
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid email or password (generic message)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 401
+                error: Unauthorized
+                message: Invalid email or password
+                path: /api/v1/auth/login
+                meta:
+                  requestId: req_7e1b5ef4191f4be8
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '403':
+          description: Email not verified / account blocklisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 403
+                error: Forbidden
+                message: Email not verified or account blocklisted
+                path: /api/v1/auth/login
+                meta:
+                  requestId: req_111b5ef4191f4be8
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/register:
+    post:
+      tags:
+        - Authify
+      summary: Register user
+      description: Creates a new user account and triggers an email verification flow.
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  description: Full name
+                  example: Ishan Sharma
+                email:
+                  type: string
+                  format: email
+                  description: Must be a valid, unique email
+                  example: ishan@example.com
+                password:
+                  type: string
+                  format: password
+                  description: Min 8 chars, 1 uppercase, 1 number, 1 special char
+                  example: StrongP@ssw0rd!
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Account created. Please verify your email to continue.
+                  data:
+                    type: object
+                    required:
+                      - user
+                    properties:
+                      user:
+                        type: object
+                        required:
+                          - id
+                          - email
+                          - name
+                          - isEmailVerified
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+                          email:
+                            type: string
+                            format: email
+                            example: ishan@example.com
+                          name:
+                            type: string
+                            example: Ishan Sharma
+                          isEmailVerified:
+                            type: boolean
+                            example: false
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          description: Validation failed (weak password, invalid email format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 400
+                error: BadRequest
+                message: Validation failed (weak password, invalid email format)
+                path: /api/v1/auth/register
+                meta:
+                  requestId: req_88bb3e3ec32e4132
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 409
+                error: Conflict
+                message: An account with this email already exists
+                path: /api/v1/auth/register
+                meta:
+                  requestId: req_dc67b6aab4084ca4
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/email-verification-link:
+    post:
+      tags:
+        - Authify
+      summary: Send email verification link
+      description: |
+        Generates and sends a fresh email verification token/link to the logged-in user's registered email.
+        Useful when the original link expired or was never received.
+        
+        *Forward-thinking recommendation:* Implement a cooldown (e.g. 60s) and a daily cap per user.
+      operationId: sendEmailVerificationLink
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Verification link sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Verification link sent to your registered email
+                  data:
+                    type: object
+                    required:
+                      - email
+                      - expiresIn
+                    properties:
+                      email:
+                        type: string
+                        format: email
+                        example: ishan@example.com
+                      expiresIn:
+                        type: integer
+                        description: Cooldown / validity duration in seconds (3600 seconds = 1 hour)
+                        example: 3600
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Email is already verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 409
+                error: Conflict
+                message: This email is already verified
+                path: /api/v1/auth/email-verification-link
+                meta:
+                  requestId: req_a62262a21304485e
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '429':
+          description: Resend requested too soon (cooldown active)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 429
+                error: TooManyRequests
+                message: Resend requested too soon. Please wait 60 seconds.
+                path: /api/v1/auth/email-verification-link
+                meta:
+                  requestId: req_992262a21304485e
+                  timestamp: "2026-06-29T10:15:30.000Z"
+
+  /auth/verify-email:
+    post:
+      tags:
+        - Authify
+      summary: Verify email
+      description: Verifies a user's email using the token issued via the verification link.
+      operationId: verifyEmail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Email verification token from the link
+                  example: a1b2c3d4e5f6g7h8i9j0
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Email verified successfully
+                  data:
+                    type: object
+                    required:
+                      - email
+                      - isEmailVerified
+                    properties:
+                      email:
+                        type: string
+                        format: email
+                        example: ishan@example.com
+                      isEmailVerified:
+                        type: boolean
+                        example: true
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          description: Token missing or malformed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 400
+                error: BadRequest
+                message: Token missing or malformed
+                path: /api/v1/auth/verify-email
+                meta:
+                  requestId: req_1a19207010304570
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '401':
+          description: Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 401
+                error: Unauthorized
+                message: Verification link is invalid or has expired
+                path: /api/v1/auth/verify-email
+                meta:
+                  requestId: req_9c4ad0bc3774418a
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '409':
+          description: Email already verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 409
+                error: Conflict
+                message: Email already verified
+                path: /api/v1/auth/verify-email
+                meta:
+                  requestId: req_2c4ad0bc3774418a
+                  timestamp: "2026-06-29T10:15:30.000Z"
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authify
+      summary: Request password reset
+      description: |
+        Generates a password reset token and emails a reset link to the user.
+        
+        *Security Note:* Always returns a 200 OK success message whether or not the email exists in the system to prevent account-enumeration leaks.
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Registered user email
+                  example: ishan@example.com
+      responses:
+        '200':
+          description: Password reset request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: If an account exists with this email, a reset link has been sent
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authify
+      summary: Reset password
+      description: |
+        Resets the user's password using the token issued by `/forgot-password`.
+        
+        *Security Note:* Invalidate all existing sessions and refresh tokens for the user right after a password reset to close session gaps.
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+                - confirmPassword
+              properties:
+                token:
+                  type: string
+                  description: Password reset token from the email link
+                  example: z9y8x7w6v5u4t3s2r1q0
+                newPassword:
+                  type: string
+                  format: password
+                  description: Min 8 chars, 1 uppercase, 1 number, 1 special char
+                  example: NewStrongP@ss1
+                confirmPassword:
+                  type: string
+                  format: password
+                  description: Must match newPassword
+                  example: NewStrongP@ss1
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Password reset successfully. Please log in with your new password.
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          description: Validation failed or passwords don't match
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 400
+                error: BadRequest
+                message: Passwords do not match
+                path: /api/v1/auth/reset-password
+                meta:
+                  requestId: req_f70351b9f9924d89
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '401':
+          description: Reset token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 401
+                error: Unauthorized
+                message: Reset token invalid or expired
+                path: /api/v1/auth/reset-password
+                meta:
+                  requestId: req_9c4ad0bc3774418a
+                  timestamp: "2026-06-29T10:15:30.000Z"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authify
+      summary: Refresh access token
+      description: |
+        Issues a new short-lived access token using a valid refresh token.
+        
+        *Token Delivery:* The refresh token is primary sent via an `HttpOnly`, `Secure`, `SameSite=Strict` cookie named `refreshToken`.
+        An alternative JSON request body parameter `refreshToken` is supported for mobile clients lacking cookie support (must be HTTPS).
+        
+        *Security Note — Reuse Detection:* Implementing refresh token rotation is recommended. If a rotated refresh token is reused, all sessions for the user are revoked immediately.
+      operationId: refreshAccessToken
+      security: []
+      parameters:
+        - in: cookie
+          name: refreshToken
+          required: false
+          schema:
+            type: string
+          description: Cookie containing the refresh token JWT
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: Optional fallback refresh token for non-cookie clients
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          headers:
+            Set-Cookie:
+              description: Returns a new refresh token if rotation is implemented.
+              schema:
+                type: string
+                example: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Access token refreshed successfully
+                  data:
+                    type: object
+                    required:
+                      - accessToken
+                      - expiresIn
+                    properties:
+                      accessToken:
+                        type: string
+                        description: New JWT Access Token
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expiresIn:
+                        type: integer
+                        description: Expiry in seconds (900 seconds)
+                        example: 900
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          description: Refresh token missing (no cookie/body present)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 400
+                error: BadRequest
+                message: Refresh token missing (no cookie/body present)
+                path: /api/v1/auth/refresh
+                meta:
+                  requestId: req_3d8e1f4a2b9c4730
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '401':
+          description: Refresh token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 401
+                error: Unauthorized
+                message: Refresh token is invalid or has expired. Please log in again.
+                path: /api/v1/auth/refresh
+                meta:
+                  requestId: req_5d8e1f4a2b9c4730
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '403':
+          description: Token reuse detected — all sessions revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 403
+                error: Forbidden
+                message: Token reuse detected. All sessions revoked for security.
+                path: /api/v1/auth/refresh
+                meta:
+                  requestId: req_6d8e1f4a2b9c4730
+                  timestamp: "2026-06-29T10:15:30.000Z"
+
+  /admin/users:
+    get:
+      tags:
+        - Authify
+      summary: List all users (Admin only)
+      description: Returns a paginated list of all users.
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Items per page
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+          description: Filter by name/email
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [active, blocklisted, unverified]
+          description: Filter by user status
+      responses:
+        '200':
+          description: Users fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Users fetched successfully
+                  data:
+                    type: object
+                    required:
+                      - users
+                      - pagination
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AdminUserView'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationInfo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/blocklist:
+    patch:
+      tags:
+        - Authify
+      summary: Blocklist or un-blocklist user (Admin only)
+      description: |
+        Blocklists (or un-blocklists) a user account, preventing future logins.
+        
+        *Security Note:* On blocklisting, immediately revoke that user's active sessions/refresh tokens to apply the block instantly.
+      operationId: patchUserBlocklist
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique user ID to blocklist/un-blocklist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - blocklisted
+              properties:
+                blocklisted:
+                  type: boolean
+                  description: true to blocklist, false to lift the block
+                  example: true
+                reason:
+                  type: string
+                  description: Internal note for audit logs
+                  example: Multiple reports of abusive behavior
+      responses:
+        '200':
+          description: User blocklist status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: User has been blocklisted successfully
+                  data:
+                    type: object
+                    required:
+                      - id
+                      - isBlocklisted
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+                      isBlocklisted:
+                        type: boolean
+                        example: true
+                      blocklistedAt:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        example: "2026-06-29T10:15:30.000Z"
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Admin attempting to blocklist themselves / another admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 409
+                error: Conflict
+                message: Cannot blocklist yourself or another administrator
+                path: /api/v1/admin/users/f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c/blocklist
+                meta:
+                  requestId: req_9c7c0daec521462d
+                  timestamp: "2026-06-29T10:15:30.000Z"
+
+  /admin/users/{userId}:
+    delete:
+      tags:
+        - Authify
+      summary: Permanently delete user (Admin only)
+      description: |
+        Permanently deletes a user account.
+        
+        *Recommendation:* Consider a soft delete (setting `deletedAt` timestamp + anonymizing PII) instead of a hard delete to ensure audit trail and recovery options while remaining compliant with right-to-erasure requirements.
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique user ID to delete
+      responses:
+        '200':
+          description: User account deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: User account deleted successfully
+                  data:
+                    type: object
+                    required:
+                      - id
+                      - deletedAt
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+                      deletedAt:
+                        type: string
+                        format: date-time
+                        example: "2026-06-29T10:15:30.000Z"
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /shorten:
+    post:
+      tags:
+        - Snip
+      summary: Create shortened URL
+      description: |
+        Creates a shortened URL for a given destination link.
+        
+        *Authentication details:*
+        - **Anonymous Users (Unauthenticated):** Allowed to shorten URLs with default settings. Subject to stricter rate limits.
+        - **Authenticated Users (With JWT):** Can track link ownership, configure a custom alias, and specify an expiration date.
+        
+        *Security recommendation:* Screen the `originalUrl` against a safe-browsing/threat-intelligence API (e.g., Google Safe Browsing) to prevent phishing abuses.
+        *Algorithm tip:* For auto-generated codes, use a base62-encoded counter to avoid collision retries at scale, reserving system routes (e.g., admin, api, login) in a denylist.
+      operationId: shortenUrl
+      security:
+        - bearerAuth: []
+        - {} # Optional authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - originalUrl
+              properties:
+                originalUrl:
+                  type: string
+                  format: uri
+                  description: The destination URL. Must be a valid http / https URL.
+                  example: https://example.com/blog/system-design-interview-prep-guide
+                customAlias:
+                  type: string
+                  minLength: 4
+                  maxLength: 20
+                  pattern: "^[a-zA-Z0-9-]+$"
+                  description: Requested short code (4-20 chars, alphanumeric + hyphens). Requires authentication.
+                  example: sd-prep
+                expiresAt:
+                  type: string
+                  format: date-time
+                  description: ISO 8601 expiry timestamp. Requires authentication. Omit for non-expiring link.
+                  example: "2026-12-31T23:59:59.000Z"
+      responses:
+        '201':
+          description: URL shortened successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: URL shortened successfully
+                  data:
+                    $ref: '#/components/schemas/ShortUrlDetails'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '400':
+          description: originalUrl missing or not a valid URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 400
+                error: BadRequest
+                message: originalUrl missing or not a valid URL
+                path: /api/v1/shorten
+                meta:
+                  requestId: req_3b7e9f1a4c2d4e85
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '401':
+          description: customAlias or expiresAt provided without authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 401
+                error: Unauthorized
+                message: customAlias or expiresAt requires authentication
+                path: /api/v1/shorten
+                meta:
+                  requestId: req_4b7e9f1a4c2d4e85
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '409':
+          description: customAlias already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 409
+                error: Conflict
+                message: This custom alias is already in use
+                path: /api/v1/shorten
+                meta:
+                  requestId: req_e41a6c2f9b3d4170
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '422':
+          description: URL points to a known malicious/blocklisted domain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 422
+                error: UnprocessableEntity
+                message: Destination URL points to a known malicious or blocklisted domain
+                path: /api/v1/shorten
+                meta:
+                  requestId: req_7b7e9f1a4c2d4e85
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /{shortURL}:
+    get:
+      servers:
+        - url: https://snip.to
+          description: Short Link Redirection Domain
+      tags:
+        - Snip
+      summary: Redirect to destination URL
+      description: |
+        Redirects the client to the original destination URL associated with a short code.
+        
+        *Redirect Best Practice:* Uses `302 Found` instead of `301 Moved Permanently` to prevent browser/CDN caching. This preserves the ability to expire/change links and reliably count click analytics.
+        
+        *Analytics Note:* Click metadata (timestamp, referrer, user agent, coarse geo from IP) must be logged **asynchronously** to ensure redirection latency is not impacted.
+      operationId: redirectUrl
+      security: []
+      parameters:
+        - in: path
+          name: shortURL
+          required: true
+          schema:
+            type: string
+          description: Generated short code (e.g., `sd-prep`), not the full URL.
+      responses:
+        '302':
+          description: HTTP redirect to the original destination
+          headers:
+            Location:
+              description: The destination URL
+              schema:
+                type: string
+                example: https://example.com/blog/system-design-interview-prep-guide
+        '404':
+          description: Short code does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 404
+                error: NotFound
+                message: Short code does not exist
+                path: /sd-prep
+                meta:
+                  requestId: req_82c4f1e7a9b34d61
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '410':
+          description: Short URL has expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+              example:
+                success: false
+                statusCode: 410
+                error: Gone
+                message: This short link has expired
+                path: /sd-prep
+                meta:
+                  requestId: req_82c4f1e7a9b34d62
+                  timestamp: "2026-06-29T10:15:30.000Z"
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /admin/short-urls:
+    get:
+      tags:
+        - Snip
+      summary: List all short URLs (Admin only)
+      description: Returns a paginated list of all short URLs in the system for moderation.
+      operationId: listShortUrls
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Items per page
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+          description: Filter by shortCode or originalUrl
+        - in: query
+          name: sortBy
+          required: false
+          schema:
+            type: string
+            enum: [clicks, createdAt]
+            default: createdAt
+          description: Field to sort by
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [active, expired]
+          description: Filter by status
+      responses:
+        '200':
+          description: Short URLs fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Short URLs fetched successfully
+                  data:
+                    type: object
+                    required:
+                      - shortUrls
+                      - pagination
+                    properties:
+                      shortUrls:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AdminShortUrlView'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationInfo'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/short-urls/{shortURL}:
+    get:
+      tags:
+        - Snip
+      summary: Get short URL details and analytics (Admin only)
+      description: |
+        Returns detailed metadata and click analytics for a single short URL.
+        
+        *Performance suggestion:* Aggregate analytics data (clicks, referrers, geo) from a separate summary table or time-series store to keep read performance fast.
+      operationId: getShortUrlDetails
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: shortURL
+          required: true
+          schema:
+            type: string
+          description: The short code of the URL
+      responses:
+        '200':
+          description: Short URL details fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - data
+                  - meta
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Short URL details fetched successfully
+                  data:
+                    type: object
+                    required:
+                      - id
+                      - shortCode
+                      - shortUrl
+                      - originalUrl
+                      - isActive
+                      - createdAt
+                      - analytics
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: 9c4d2a1b-7e3f-4a8c-9b1d-3e5f7a9c1b2d
+                      shortCode:
+                        type: string
+                        example: sd-prep
+                      shortUrl:
+                        type: string
+                        format: uri
+                        example: https://snip.to/sd-prep
+                      originalUrl:
+                        type: string
+                        format: uri
+                        example: https://example.com/blog/system-design-interview-prep-guide
+                      ownerId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+                      isActive:
+                        type: boolean
+                        example: true
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2026-06-29T10:15:30.000Z"
+                      expiresAt:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        example: "2026-12-31T23:59:59.000Z"
+                      analytics:
+                        $ref: '#/components/schemas/ShortUrlAnalytics'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token containing user roles and claims.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+      description: Refresh token cookie for session updates.
+  schemas:
+    Meta:
+      type: object
+      required:
+        - requestId
+        - timestamp
+      properties:
+        requestId:
+          type: string
+          description: Unique identifier for tracking and debugging requests
+          example: req_7c2563a341704890
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC timestamp of response generation
+          example: "2026-06-29T10:15:30.000Z"
+    
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - role
+        - isEmailVerified
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+        email:
+          type: string
+          format: email
+          example: ishan@example.com
+        name:
+          type: string
+          example: Ishan Sharma
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          example: USER
+        isEmailVerified:
+          type: boolean
+          example: true
+
+    AdminUserView:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - role
+        - isEmailVerified
+        - isBlocklisted
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+        name:
+          type: string
+          example: Ishan Sharma
+        email:
+          type: string
+          format: email
+          example: ishan@example.com
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          example: USER
+        isEmailVerified:
+          type: boolean
+          example: true
+        isBlocklisted:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-01-15T08:30:00.000Z"
+
+    PaginationInfo:
+      type: object
+      required:
+        - totalItems
+        - currentPage
+        - totalPages
+        - limit
+      properties:
+        totalItems:
+          type: integer
+          example: 142
+        currentPage:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 8
+        limit:
+          type: integer
+          example: 20
+
+    ShortUrlDetails:
+      type: object
+      required:
+        - shortCode
+        - shortUrl
+        - originalUrl
+        - createdAt
+      properties:
+        shortCode:
+          type: string
+          description: Short link identifier code
+          example: sd-prep
+        shortUrl:
+          type: string
+          format: uri
+          description: The fully qualified shortened URL
+          example: https://snip.to/sd-prep
+        originalUrl:
+          type: string
+          format: uri
+          description: The destination web link
+          example: https://example.com/blog/system-design-interview-prep-guide
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Expiration date-time if configured, else null for permanent links
+          example: "2026-12-31T23:59:59.000Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-29T10:15:30.000Z"
+
+    AdminShortUrlView:
+      type: object
+      required:
+        - id
+        - shortCode
+        - shortUrl
+        - originalUrl
+        - clicks
+        - isActive
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 9c4d2a1b-7e3f-4a8c-9b1d-3e5f7a9c1b2d
+        shortCode:
+          type: string
+          example: sd-prep
+        shortUrl:
+          type: string
+          format: uri
+          example: https://snip.to/sd-prep
+        originalUrl:
+          type: string
+          format: uri
+          example: https://example.com/blog/system-design-interview-prep-guide
+        ownerId:
+          type: string
+          format: uuid
+          nullable: true
+          example: f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c
+        clicks:
+          type: integer
+          example: 482
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-29T10:15:30.000Z"
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-12-31T23:59:59.000Z"
+
+    ShortUrlAnalytics:
+      type: object
+      required:
+        - totalClicks
+        - clicksLast7Days
+        - topReferrers
+        - topCountries
+      properties:
+        totalClicks:
+          type: integer
+          example: 482
+        clicksLast7Days:
+          type: array
+          items:
+            type: integer
+          example: [12, 30, 45, 28, 60, 51, 40]
+        topReferrers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferrerStats'
+        topCountries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryStats'
+
+    ReferrerStats:
+      type: object
+      required:
+        - source
+        - clicks
+      properties:
+        source:
+          type: string
+          example: twitter.com
+        clicks:
+          type: integer
+          example: 190
+
+    CountryStats:
+      type: object
+      required:
+        - country
+        - clicks
+      properties:
+        country:
+          type: string
+          example: IN
+        clicks:
+          type: integer
+          example: 260
+
+    ErrorEnvelope:
+      type: object
+      required:
+        - success
+        - statusCode
+        - error
+        - message
+        - path
+        - meta
+      properties:
+        success:
+          type: boolean
+          example: false
+        statusCode:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: BadRequest
+        message:
+          type: string
+          example: Validation failed (missing/invalid fields)
+        path:
+          type: string
+          example: /api/v1/auth/login
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+  responses:
+    BadRequest:
+      description: Bad Request - Validation failure on request body/params
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 400
+            error: BadRequest
+            message: Validation failed (missing/invalid fields)
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_1ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    Unauthorized:
+      description: Unauthorized - Missing, invalid, or expired token/credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 401
+            error: Unauthorized
+            message: Missing or invalid access token
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_2ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    Forbidden:
+      description: Forbidden - Authenticated but lacking required role/permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 403
+            error: Forbidden
+            message: You do not have permission to access this resource
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_3ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    NotFound:
+      description: NotFound - Resource (user/token/link) does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 404
+            error: NotFound
+            message: Resource not found
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_4ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    Conflict:
+      description: Conflict - Duplicate resource or invalid state transition
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 409
+            error: Conflict
+            message: Duplicate resource exists
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_5ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    Gone:
+      description: Gone - Resource existed but is no longer available (e.g., expired short URL)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 410
+            error: Gone
+            message: This short link has expired
+            path: /sd-prep
+            meta:
+              requestId: req_6ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    UnprocessableEntity:
+      description: UnprocessableEntity - Semantically invalid input (e.g. blocklisted destination domain)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 422
+            error: UnprocessableEntity
+            message: Semantically invalid request parameters
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_7ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    TooManyRequests:
+      description: TooManyRequests - Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          description: The maximum number of requests allowed in the window
+          schema:
+            type: integer
+          example: 5
+        X-RateLimit-Remaining:
+          description: The number of requests remaining in the current window
+          schema:
+            type: integer
+          example: 0
+        X-RateLimit-Reset:
+          description: The Unix epoch timestamp when the rate limit resets
+          schema:
+            type: integer
+          example: 1719655200
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 429
+            error: TooManyRequests
+            message: Rate limit exceeded. Please try again later.
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_8ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"
+    InternalServerError:
+      description: InternalServerError - Unhandled server-side failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            statusCode: 500
+            error: InternalServerError
+            message: An unexpected server-side error occurred
+            path: /api/v1/some-endpoint
+            meta:
+              requestId: req_9ec13c7a144b4c1a
+              timestamp: "2026-06-29T10:15:30.000Z"

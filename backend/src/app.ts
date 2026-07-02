@@ -1,5 +1,8 @@
+import { config } from 'dotenv';
+config();
 import express from 'express';
-import { errorMiddleware } from './shared/middlewares/error.middleware.js';
+import { errorMiddleware } from './shared/middlewares/error.middleware';
+
 
 const app = express();
 app.use(express.json());

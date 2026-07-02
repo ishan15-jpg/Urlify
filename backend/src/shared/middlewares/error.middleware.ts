@@ -3,7 +3,7 @@ import { AppError } from '../errors/app-error';
 import { ValidationError } from '../errors/validation.error';
 import { logger } from '../utils/logger';
 
-export function errorMiddleware(err: unknown, req: Request, res: Response, _next: NextFunction) {
+export function errorMiddleware(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     if (!err.isOperational) {
       logger.error('Non-operational error', err);
@@ -18,3 +18,4 @@ export function errorMiddleware(err: unknown, req: Request, res: Response, _next
   logger.error('Unhandled error', err);
   return res.status(500).json({ error: 'Internal server error' });
 }
+

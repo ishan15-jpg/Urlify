@@ -17,20 +17,20 @@ class DatabaseConfig {
 
   private constructor() {
     const poolConfig: PoolConfig = {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: Number(process.env.POSTGRES_PORT) || 5432,
-      user: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || '',
-      database: process.env.POSTGRES_NAME || 'urlify',
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT) || 5432,
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'urlify',
 
       // Maximum number of clients the pool should hold.
-      max: Number(process.env.POSTGRES_MAX_POOL) || 10,
+      max: Number(process.env.DB_MAX_POOL) || 10,
 
       // How long (ms) a client can sit idle in the pool before being released.
-      idleTimeoutMillis: Number(process.env.POSTGRES_IDLE_TIMEOUT_MS) || 30_000,
+      idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS) || 30_000,
 
       // How long (ms) to wait when acquiring a connection before throwing.
-      connectionTimeoutMillis: Number(process.env.POSTGRES_CONNECTION_TIMEOUT_MS) || 2_000,
+      connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS) || 2_000,
     };
 
     this.pool = new Pool(poolConfig);

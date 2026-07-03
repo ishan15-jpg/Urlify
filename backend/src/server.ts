@@ -1,5 +1,6 @@
 import app from './app';
 import { logger } from './shared/utils/logger';
+import { closeDatabasePool } from './shared/config/database.config';
 
 const PORT = process.env.PORT || 3000;
 
@@ -16,9 +17,11 @@ const gracefulShutdown = (signal: string) => {
     process.exit(1);
   }, 10000);
 
-  server.close(() => {
+  server.close(async () => {
     logger.info('HTTP server closed successfully.');
     clearTimeout(forceExitTimeout);
+    await closeDatabasePool();
+    logger.info('Database pool closed successfully.');
     process.exit(0);
   });
 };

@@ -7,7 +7,12 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+
+    "db:create": "node-pg-migrate create",
+    "db:up": "node-pg-migrate up",
+    "db:down": "node-pg-migrate down",
+    "db:migrate": "node-pg-migrate migrate"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +21,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.0",
+    "@types/node-pg-migrate": "^2.3.1",
     "@types/pg": "^8.20.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
@@ -24,6 +30,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "node-pg-migrate": "^8.0.4",
     "pg": "^8.22.0",
     "winston": "^3.19.0",
     "zod": "^4.4.3"

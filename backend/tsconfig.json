@@ -13,7 +13,8 @@
     "resolveJsonModule": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"]

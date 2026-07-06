@@ -32,6 +32,10 @@ function makeMockRepository(): jest.Mocked<IAuthRepository> {
     create: jest.fn(),
     storeRefreshToken: jest.fn(),
     createEmailVerificationToken: jest.fn(),
+    findById: jest.fn(),
+    findVerificationTokenByHash: jest.fn(),
+    updateVerificationTokenStatus: jest.fn(),
+    updateUserVerificationStatus: jest.fn(),
   };
 }
 

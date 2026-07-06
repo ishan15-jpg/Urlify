@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { IAuthRepository } from './interfaces/auth-repository.interface';
-import { User } from './auth.entity';
+import { User, EmailVerificationToken } from './auth.entity';
 import { logger } from '../shared/utils/logger';
 
 
@@ -99,6 +99,95 @@ export class AuthRepository implements IAuthRepository {
        VALUES ($1, $2, $3)`,
       [userId, tokenHash, expiresAt],
     );
+  }
+
+  /**
+   * Finds a user by their unique database ID.
+   *
+   * @param id - The UUID of the user.
+   * @returns The matching User entity, or null if not found.
+   */
+  async findById(id: string): Promise<User | null> {
+    logger.debug(`Database query: findById initiated`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, name, email, password_hash, is_email_verified, is_blacklisted,
+              is_deleted, last_login, created_at, updated_at
+       FROM users
+       WHERE id = $1 AND is_deleted = false
+       LIMIT 1`,
+      [id],
+    );
+
+    if (!result.rows[0]) {
+      logger.debug(`User not found by ID`);
+      return null;
+    }
+    logger.debug(`User found by ID`);
+    return this.toEntity(result.rows[0]);
+  }
+
+  /**
+   * Looks up an email verification token by its hash.
+   *
+   * @param tokenHash - The SHA-256 token hash.
+   * @returns The verification token record, or null if not found.
+   */
+  async findVerificationTokenByHash(tokenHash: string): Promise<EmailVerificationToken | null> {
+    logger.debug(`Database query: findVerificationTokenByHash initiated`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, user_id, token_hash, is_revoked, expires_at, is_expired, created_at, updated_at
+       FROM email_verification_tokens
+       WHERE token_hash = $1
+       LIMIT 1`,
+      [tokenHash],
+    );
+
+    if (!result.rows[0]) {
+      logger.debug(`Verification token not found`);
+      return null;
+    }
+    logger.debug(`Verification token found`);
+    return this.toEmailVerificationTokenEntity(result.rows[0]);
+  }
+
+  /**
+   * Updates the status (revocation & expiration) of an email verification token.
+   */
+  async updateVerificationTokenStatus(tokenId: string, isRevoked: boolean, isExpired: boolean): Promise<void> {
+    logger.debug(`Updating verification token status for token ${tokenId}`);
+    await this.db.query(
+      `UPDATE email_verification_tokens
+       SET is_revoked = $2, is_expired = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [tokenId, isRevoked, isExpired],
+    );
+  }
+
+  /**
+   * Updates the email verification status flag on a user record.
+   */
+  async updateUserVerificationStatus(userId: string, isVerified: boolean): Promise<void> {
+    logger.debug(`Updating email verification status for user ${userId} to ${isVerified}`);
+    await this.db.query(
+      `UPDATE users
+       SET is_email_verified = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [userId, isVerified],
+    );
+  }
+
+  /** Maps a raw database row to the EmailVerificationToken domain entity. */
+  private toEmailVerificationTokenEntity(row: Record<string, unknown>): EmailVerificationToken {
+    return {
+      id: String(row['id']),
+      userId: row['user_id'] as string,
+      tokenHash: row['token_hash'] as string,
+      isRevoked: row['is_revoked'] as boolean,
+      expiresAt: new Date(row['expires_at'] as string),
+      isExpired: row['is_expired'] as boolean,
+      createdAt: new Date(row['created_at'] as string),
+      updatedAt: new Date(row['updated_at'] as string),
+    };
   }
 }
 

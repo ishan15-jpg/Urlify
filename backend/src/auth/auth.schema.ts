@@ -29,3 +29,10 @@ export const loginSchema = z.object({
 
 export type LoginSchemaType = z.infer<typeof loginSchema>;
 
+export const verifyEmailSchema = z.object({
+  token: z.string({ message: 'Verification token is required' }).min(1, 'Verification token is required'),
+});
+
+export type VerifyEmailSchemaType = z.infer<typeof verifyEmailSchema>;
+
+

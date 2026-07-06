@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authController } from './auth.module';
 import validate from '../shared/middlewares/validate.middleware';
-import { loginSchema, registerSchema } from './auth.schema';
+import { loginSchema, registerSchema, verifyEmailSchema } from './auth.schema';
 import { logger } from '../shared/utils/logger';
 import { authenticate } from '../shared/middlewares/auth.middleware';
 
@@ -33,6 +33,14 @@ authRouter.post('/email-verification-link',
     (_, __, next) => { logger.info(`Email verification link request received`); next(); },
     authenticate,
     authController.sendEmailVerificationLink
+);
+
+// POST /api/v1/auth/verify-email
+// Middleware chain: validate(verifyEmailSchema) → authController.verifyEmail
+authRouter.post('/verify-email',
+    (_, __, next) => { logger.info(`Email verification request received`); next(); },
+    validate.validateVerifyEmailRequest(verifyEmailSchema),
+    authController.verifyEmail
 );
 
 

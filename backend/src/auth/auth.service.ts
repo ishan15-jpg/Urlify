@@ -122,4 +122,61 @@ export class AuthService implements IAuthService {
     });
     logger.info(`Email send job enqueued successfully for user: ${userId}`);
   }
+
+  /**
+   * Verifies a user's email using a token. Validates the token against stored hash,
+   * sets the user as verified, and revokes/expires the token.
+   *
+   * @param token - The raw verification token string.
+   * @returns The updated User entity.
+   */
+  async verifyEmail(token: string): Promise<User> {
+    logger.debug(`Verifying email verification token`);
+    
+    // Hash the raw token
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Retrieve the token details
+    const tokenRecord = await this.authRepository.findVerificationTokenByHash(tokenHash);
+    
+    // If not found, revoked, expired, or past expiresAt, throw UnauthorizedError
+    if (
+      !tokenRecord ||
+      tokenRecord.isRevoked ||
+      tokenRecord.isExpired ||
+      new Date() > tokenRecord.expiresAt
+    ) {
+      logger.warn(`Email verification failed: Invalid or expired token`);
+      throw new UnauthorizedError('Verification link is invalid or has expired');
+    }
+
+    // Retrieve the user
+    const user = await this.authRepository.findById(tokenRecord.userId);
+    if (!user) {
+      logger.warn(`Email verification failed: User ${tokenRecord.userId} not found`);
+      throw new NotFoundError('User', tokenRecord.userId);
+    }
+
+    // If user is already verified
+    if (user.isEmailVerified) {
+      logger.warn(`Email verification failed: User ${user.id} email is already verified`);
+      throw new ConflictError('This email is already verified');
+    }
+
+    // Perform database updates
+    logger.debug(`Updating user verification status in repository`);
+    await this.authRepository.updateUserVerificationStatus(user.id, true);
+
+    logger.debug(`Invalidating token in repository`);
+    await this.authRepository.updateVerificationTokenStatus(tokenRecord.id, true, true);
+
+    logger.info(`Email verified successfully for user: ${user.id}`);
+    
+    // Fetch and return the updated user
+    const updatedUser = await this.authRepository.findById(user.id);
+    if (!updatedUser) {
+      throw new NotFoundError('User', user.id);
+    }
+    return updatedUser;
+  }
 }

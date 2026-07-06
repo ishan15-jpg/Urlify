@@ -44,6 +44,21 @@ class ValidateRequest {
       next();
     };
   }
+
+  validateVerifyEmailRequest = (schema: z.ZodType) => {
+    return (req: Request, _res: Response, next: NextFunction) => {
+      logger.debug(`Validating verify email request`)
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        logger.warn(`Verify email request failed due to invalid request body`);
+        const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
+        return next(new ValidationError(firstMessage, result.error.flatten()));
+      }
+      logger.debug(`Verify email request validated successfully`)
+      req.body = result.data; // now typed & sanitized
+      next();
+    };
+  }
 }
 
 export default ValidateRequest.getInstance();

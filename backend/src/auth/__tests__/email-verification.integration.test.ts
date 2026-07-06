@@ -98,7 +98,7 @@ describe('POST /api/v1/auth/email-verification-link', () => {
     const user = makeUser({ isEmailVerified: true });
     findByEmailSpy.mockResolvedValue(user);
 
-    const token = generateAccessToken({ userId: user.id, email: user.email });
+    const token = generateAccessToken({ userId: user.id, email: user.email, role: 'user' });
 
     const res = await request(app)
       .post('/api/v1/auth/email-verification-link')
@@ -114,7 +114,7 @@ describe('POST /api/v1/auth/email-verification-link', () => {
     findByEmailSpy.mockResolvedValue(user);
     createEmailVerificationTokenSpy.mockResolvedValue(undefined);
 
-    const token = generateAccessToken({ userId: user.id, email: user.email });
+    const token = generateAccessToken({ userId: user.id, email: user.email, role: 'user' });
 
     const res = await request(app)
       .post('/api/v1/auth/email-verification-link')
@@ -138,3 +138,178 @@ describe('POST /api/v1/auth/email-verification-link', () => {
     });
   });
 });
+
+describe('POST /api/v1/auth/verify-email', () => {
+  let findVerificationTokenByHashSpy: jest.SpyInstance;
+  let findByIdSpy: jest.SpyInstance;
+  let updateVerificationTokenStatusSpy: jest.SpyInstance;
+  let updateUserVerificationStatusSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    findVerificationTokenByHashSpy = jest.spyOn(AuthRepository.prototype, 'findVerificationTokenByHash');
+    findByIdSpy = jest.spyOn(AuthRepository.prototype, 'findById');
+    updateVerificationTokenStatusSpy = jest.spyOn(AuthRepository.prototype, 'updateVerificationTokenStatus');
+    updateUserVerificationStatusSpy = jest.spyOn(AuthRepository.prototype, 'updateUserVerificationStatus');
+  });
+
+  afterEach(() => {
+    findVerificationTokenByHashSpy.mockRestore();
+    findByIdSpy.mockRestore();
+    updateVerificationTokenStatusSpy.mockRestore();
+    updateUserVerificationStatusSpy.mockRestore();
+  });
+
+  it('rejects when token is missing in request body (400)', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('Verification token is required');
+  });
+
+  it('rejects when token is empty in request body (400)', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: '' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('Verification token is required');
+  });
+
+  it('rejects when verification token is not found in database (401)', async () => {
+    findVerificationTokenByHashSpy.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'unknown-token' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('Verification link is invalid or has expired');
+  });
+
+  it('rejects when verification token is revoked (401)', async () => {
+    findVerificationTokenByHashSpy.mockResolvedValue({
+      id: '1',
+      userId: 'user-id',
+      tokenHash: 'hashed',
+      isRevoked: true,
+      isExpired: false,
+      expiresAt: new Date(Date.now() + 100000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'revoked-token' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Verification link is invalid or has expired');
+  });
+
+  it('rejects when verification token is expired (401)', async () => {
+    findVerificationTokenByHashSpy.mockResolvedValue({
+      id: '1',
+      userId: 'user-id',
+      tokenHash: 'hashed',
+      isRevoked: false,
+      isExpired: true,
+      expiresAt: new Date(Date.now() + 100000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'expired-token' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Verification link is invalid or has expired');
+  });
+
+  it('rejects when verification token is past its expiresAt timestamp (401)', async () => {
+    findVerificationTokenByHashSpy.mockResolvedValue({
+      id: '1',
+      userId: 'user-id',
+      tokenHash: 'hashed',
+      isRevoked: false,
+      isExpired: false,
+      expiresAt: new Date(Date.now() - 5000), // expired 5 seconds ago
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'timedout-token' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Verification link is invalid or has expired');
+  });
+
+  it('rejects when user is already verified (409)', async () => {
+    findVerificationTokenByHashSpy.mockResolvedValue({
+      id: '1',
+      userId: 'user-id',
+      tokenHash: 'hashed',
+      isRevoked: false,
+      isExpired: false,
+      expiresAt: new Date(Date.now() + 100000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    findByIdSpy.mockResolvedValue(makeUser({ id: 'user-id', isEmailVerified: true }));
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'valid-token' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe('This email is already verified');
+  });
+
+  it('successfully verifies email and invalidates token (200)', async () => {
+    const unverifiedUser = makeUser({ id: 'user-id', isEmailVerified: false });
+    const verifiedUser = makeUser({ id: 'user-id', isEmailVerified: true });
+
+    findVerificationTokenByHashSpy.mockResolvedValue({
+      id: 'token-db-id',
+      userId: 'user-id',
+      tokenHash: 'hashed',
+      isRevoked: false,
+      isExpired: false,
+      expiresAt: new Date(Date.now() + 100000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Mock findById to return unverified user on first call, and verified user on second call
+    findByIdSpy
+      .mockResolvedValueOnce(unverifiedUser)
+      .mockResolvedValueOnce(verifiedUser);
+
+    updateUserVerificationStatusSpy.mockResolvedValue(undefined);
+    updateVerificationTokenStatusSpy.mockResolvedValue(undefined);
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'success-token' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe('Email verified successfully');
+    expect(res.body.data.email).toBe(verifiedUser.email);
+    expect(res.body.data.isEmailVerified).toBe(true);
+
+    expect(findVerificationTokenByHashSpy).toHaveBeenCalled();
+    expect(findByIdSpy).toHaveBeenCalledWith('user-id');
+    expect(updateUserVerificationStatusSpy).toHaveBeenCalledWith('user-id', true);
+    expect(updateVerificationTokenStatusSpy).toHaveBeenCalledWith('token-db-id', true, true);
+  });
+});
+

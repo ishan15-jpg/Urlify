@@ -1,4 +1,4 @@
-import { User } from '../auth.entity';
+import { User, EmailVerificationToken } from '../auth.entity';
 
 export interface IAuthRepository {
   /**
@@ -34,5 +34,39 @@ export interface IAuthRepository {
    * @param expiresAt - The expiration timestamp.
    */
   createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+
+  /**
+   * Finds a user by their unique database ID.
+   *
+   * @param id - The UUID of the user.
+   * @returns The matching User entity, or null if not found.
+   */
+  findById(id: string): Promise<User | null>;
+
+  /**
+   * Looks up an email verification token by its hash.
+   *
+   * @param tokenHash - The SHA-256 token hash.
+   * @returns The verification token record, or null if not found.
+   */
+  findVerificationTokenByHash(tokenHash: string): Promise<EmailVerificationToken | null>;
+
+  /**
+   * Updates the status (revocation & expiration) of an email verification token.
+   *
+   * @param tokenId - The token primary key ID.
+   * @param isRevoked - The new revoked status.
+   * @param isExpired - The new expired status.
+   */
+  updateVerificationTokenStatus(tokenId: string, isRevoked: boolean, isExpired: boolean): Promise<void>;
+
+  /**
+   * Updates the email verification status flag on a user record.
+   *
+   * @param userId - The user ID.
+   * @param isVerified - The new is_email_verified state.
+   */
+  updateUserVerificationStatus(userId: string, isVerified: boolean): Promise<void>;
 }
+
 

@@ -33,6 +33,10 @@ function makeMockRepository(): jest.Mocked<IAuthRepository> {
     create: jest.fn(),
     storeRefreshToken: jest.fn(),
     createEmailVerificationToken: jest.fn(),
+    findById: jest.fn(),
+    findVerificationTokenByHash: jest.fn(),
+    updateVerificationTokenStatus: jest.fn(),
+    updateUserVerificationStatus: jest.fn(),
   };
 }
 
@@ -131,7 +135,7 @@ describe('AuthService.login', () => {
 
       await service.login({ email: 'ishan@example.com', password: 'StrongP@ss1' });
 
-      const expectedPayload = { userId: mockUser.id, email: mockUser.email };
+      const expectedPayload = { userId: mockUser.id, email: mockUser.email, role: 'user' };
       expect(genAccessSpy).toHaveBeenCalledWith(expectedPayload);
       expect(genRefreshSpy).toHaveBeenCalledWith(expectedPayload);
     });

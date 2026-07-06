@@ -28,5 +28,14 @@ export interface IAuthService {
    * @param email - The registered email address of the user.
    */
   generateEmailVerificationLink(userId: string, email: string): Promise<void>;
+
+  /**
+   * Verifies a user's email using a token. Validates the token against stored hash,
+   * sets the user as verified, and revokes/expires the token.
+   *
+   * @param token - The raw verification token string.
+   * @returns The updated User entity.
+   */
+  verifyEmail(token: string): Promise<User>;
 }
 

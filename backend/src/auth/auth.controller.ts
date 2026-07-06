@@ -115,4 +115,35 @@ export class AuthController {
       next(err);
     }
   };
+
+  /**
+   * POST /api/v1/auth/verify-email
+   *
+   * Verifies the user's email address using the token passed in the request body.
+   */
+  verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { token } = req.body as { token: string };
+      logger.info(`Email verification request initiated`);
+      
+      const user = await this.authService.verifyEmail(token);
+      logger.info(`Email verified successfully for user ${user.id}`);
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Email verified successfully',
+        data: {
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+        },
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

@@ -1,14 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Zod schema for POST /auth/register request body.
- *
- * Rules (from API design doc):
- * - name    : required, non-empty string
- * - email   : required, must be a valid email format
- * - password: required, min 8 chars, at least 1 uppercase letter,
- *             1 digit, and 1 special character
- */
 export const registerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.email('Must be a valid email address'),
@@ -21,3 +12,17 @@ export const registerSchema = z.object({
 });
 
 export type RegisterSchemaType = z.infer<typeof registerSchema>;
+
+export const loginSchema = z.object({
+  email: z.email('Incorrect email format'),
+  password: z
+    .string({ message: 'Password is required' })
+    .min(1, 'Password is required')
+    .min(8, 'Incorrect password format')
+    .regex(/[A-Z]/, 'Incorrect password format')
+    .regex(/[0-9]/, 'Incorrect password format')
+    .regex(/[!@#$%^&*_]/, 'Incorrect password format'),
+});
+
+export type LoginSchemaType = z.infer<typeof loginSchema>;
+

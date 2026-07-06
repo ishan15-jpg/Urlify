@@ -1,37 +1,83 @@
+import crypto from 'crypto';
 import { IAuthService } from './interfaces/auth-service.interface';
 import { IAuthRepository } from './interfaces/auth-repository.interface';
 import { RegisterRequestDto } from './dtos/register-request.dto';
+import { LoginRequestDto } from './dtos/login-request.dto';
 import { User } from './auth.entity';
 import { ConflictError } from '../shared/errors/conflict.error';
-import { hashPassword } from '../shared/utils/password.util';
+import { UnauthorizedError } from '../shared/errors/unauthorized.error';
+import { hashPassword, comparePassword } from '../shared/utils/password.util';
+import { generateAccessToken, generateRefreshToken } from '../shared/utils/token.util';
+import { logger } from '../shared/utils/logger';
 
 export class AuthService implements IAuthService {
   constructor(private readonly authRepository: IAuthRepository) {}
 
   /**
-   * Registers a new user account.
-   *
-   * Steps:
-   * 1. Check whether the email is already taken — throw ConflictError if so.
-   * 2. Hash the password via bcrypt.
-   * 3. Persist the new record and return the created entity.
-   *
-   * @param dto - Validated registration payload (name, email, password).
-   * @returns The newly created User entity.
-   * @throws ConflictError if the email is already registered.
-   */
+  * @param dto - Validated registration payload (name, email, password).
+  * @returns The newly created User entity.
+  * @throws ConflictError if the email is already registered.
+  */
   async register(dto: RegisterRequestDto): Promise<User> {
+    logger.debug(`Looking up user by email`);
     const existing = await this.authRepository.findByEmail(dto.email);
     if (existing) {
+      logger.warn(`Registration failed due to duplicate email`);
       throw new ConflictError('An account with this email already exists');
     }
 
+    logger.debug(`Password hash initiated`)
     const passwordHash = await hashPassword(dto.password);
+    logger.debug(`Password hash completed`)
 
-    return this.authRepository.create({
+    logger.debug(`Inserting new user into database`)
+    const user = await this.authRepository.create({
       name: dto.name,
       email: dto.email,
       passwordHash,
     });
+    
+    logger.debug(`New user inserted successfully`);
+    return user;
+  }
+
+  /**
+   * @param dto - Validated login payload.
+   * @returns User entity, access token, and refresh token.
+   * @throws UnauthorizedError if email not found or password incorrect.
+  */
+  async login(dto: LoginRequestDto): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    logger.debug(`Looking up user by email`);
+    const user = await this.authRepository.findByEmail(dto.email);
+    if (!user) {
+      logger.warn(`Login failed: email not found`);
+      throw new UnauthorizedError('Email not found');
+    }
+
+    logger.debug(`Comparing paswords`);
+    const isMatch = await comparePassword(dto.password, user.passwordHash);
+    if (!isMatch) {
+      logger.warn(`Login failed: incorrect password`);
+      throw new UnauthorizedError('Incorrect password');
+    }
+
+    const payload = { userId: user.id, email: user.email };
+    logger.debug(`Creating access token`);
+    const accessToken = generateAccessToken(payload);
+    logger.debug(`Access token created`);
+    logger.debug(`Creating refresh token`);
+    const refreshToken = generateRefreshToken(payload);
+    logger.debug(`Refresh token created`);
+
+    // Hash refresh token using SHA-256 to save in database
+    logger.debug(`Hashing refresh token`);
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    logger.debug(`Refresh token hashed`);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    logger.debug(`Storing refresh token hash in repository`);
+    await this.authRepository.storeRefreshToken(user.id, tokenHash, expiresAt);
+
+    return { user, accessToken, refreshToken };
   }
 }

@@ -38,10 +38,13 @@ class ServerConfig {
    * @param app - The Express application to serve.
    */
   public async start(app: Application): Promise<void> {
+    logger.debug(`Server config initiated`);
+
     const PORT = Number(process.env.PORT) || 3000;
 
     this.server = http.createServer(app);
 
+    logger.debug(`Server is about to start on port ${PORT}`);
     this.server.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
     });

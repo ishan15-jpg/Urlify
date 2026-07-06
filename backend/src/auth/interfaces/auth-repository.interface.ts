@@ -16,4 +16,13 @@ export interface IAuthRepository {
    * @returns The newly created User entity with all fields populated.
    */
   create(data: Pick<User, 'name' | 'email' | 'passwordHash'>): Promise<User>;
+
+  /**
+   * Stores a user's refresh token hash in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param tokenHash - The SHA-256 hash of the refresh token.
+   * @param expiresAt - The expiration timestamp.
+   */
+  storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
 }

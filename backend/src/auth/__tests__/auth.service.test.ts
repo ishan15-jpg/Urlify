@@ -30,6 +30,7 @@ function makeMockRepository(): jest.Mocked<IAuthRepository> {
   return {
     findByEmail: jest.fn(),
     create: jest.fn(),
+    storeRefreshToken: jest.fn(),
   };
 }
 

@@ -1,6 +1,8 @@
 import { Pool } from 'pg';
 import { IAuthRepository } from './interfaces/auth-repository.interface';
 import { User } from './auth.entity';
+import { logger } from '../shared/utils/logger';
+
 
 export class AuthRepository implements IAuthRepository {
   constructor(private readonly db: Pool) {}
@@ -13,6 +15,7 @@ export class AuthRepository implements IAuthRepository {
    * @returns The matching User entity, or null if not found.
    */
   async findByEmail(email: string): Promise<User | null> {
+    logger.debug(`Database query initiated`);
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT id, name, email, password_hash, is_email_verified, is_blacklisted,
               is_deleted, last_login, created_at, updated_at
@@ -22,7 +25,11 @@ export class AuthRepository implements IAuthRepository {
       [email],
     );
 
-    if (!result.rows[0]) return null;
+    if (!result.rows[0]) {
+      logger.debug(`User not found from database`);
+      return null;
+    }
+    logger.debug(`User found from database`);
     return this.toEntity(result.rows[0]);
   }
 
@@ -34,6 +41,7 @@ export class AuthRepository implements IAuthRepository {
    * @returns The newly created User entity.
    */
   async create(data: Pick<User, 'name' | 'email' | 'passwordHash'>): Promise<User> {
+    logger.debug(`Database query initiated`)
     const result = await this.db.query<Record<string, unknown>>(
       `INSERT INTO users (name, email, password_hash)
        VALUES ($1, $2, $3)
@@ -41,7 +49,7 @@ export class AuthRepository implements IAuthRepository {
                  is_deleted, last_login, created_at, updated_at`,
       [data.name, data.email, data.passwordHash],
     );
-
+    
     return this.toEntity(result.rows[0]);
   }
 
@@ -59,5 +67,21 @@ export class AuthRepository implements IAuthRepository {
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };
+  }
+
+  /**
+   * Stores a user's refresh token hash in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param tokenHash - The SHA-256 hash of the refresh token.
+   * @param expiresAt - The expiration timestamp.
+   */
+  async storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    logger.debug(`Storing refresh token for user ${userId}`);
+    await this.db.query(
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, tokenHash, expiresAt],
+    );
   }
 }

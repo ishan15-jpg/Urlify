@@ -20,4 +20,13 @@ export interface IAuthService {
    * @returns User entity, access token, and refresh token.
    */
   login(dto: LoginRequestDto): Promise<{ user: User; accessToken: string; refreshToken: string }>;
+
+  /**
+   * Generates an email verification token, stores it in the database, and enqueues a job to send the email.
+   *
+   * @param userId - The ID of the user.
+   * @param email - The registered email address of the user.
+   */
+  generateEmailVerificationLink(userId: string, email: string): Promise<void>;
 }
+

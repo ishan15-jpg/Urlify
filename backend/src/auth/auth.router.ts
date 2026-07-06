@@ -3,6 +3,7 @@ import { authController } from './auth.module';
 import validate from '../shared/middlewares/validate.middleware';
 import { loginSchema, registerSchema } from './auth.schema';
 import { logger } from '../shared/utils/logger';
+import { authenticate } from '../shared/middlewares/auth.middleware';
 
 /**
  * Auth router — all paths here are relative to the mount point in app.ts.
@@ -25,4 +26,13 @@ authRouter.post('/login',
     validate.validateLoginRequest(loginSchema),
     authController.login
 );
+
+// POST /api/v1/auth/email-verification-link
+// Middleware chain: authenticate → authController.sendEmailVerificationLink
+authRouter.post('/email-verification-link',
+    (_, __, next) => { logger.info(`Email verification link request received`); next(); },
+    authenticate,
+    authController.sendEmailVerificationLink
+);
+
 

@@ -48,7 +48,7 @@ describe('AuthController.register', () => {
   let controller: AuthController;
 
   beforeEach(() => {
-    mockService = { register: jest.fn(), login: jest.fn() };
+    mockService = { register: jest.fn(), login: jest.fn(), generateEmailVerificationLink: jest.fn() };
     controller = new AuthController(mockService);
   });
 

@@ -14,3 +14,15 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface EmailVerificationToken {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  isRevoked: boolean;
+  expiresAt: Date;
+  isExpired: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+

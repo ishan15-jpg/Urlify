@@ -25,4 +25,14 @@ export interface IAuthRepository {
    * @param expiresAt - The expiration timestamp.
    */
   storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+
+  /**
+   * Stores a user's email verification token hash in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param tokenHash - The SHA-256 hash of the verification token.
+   * @param expiresAt - The expiration timestamp.
+   */
+  createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
 }
+

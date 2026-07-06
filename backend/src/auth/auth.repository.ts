@@ -84,4 +84,21 @@ export class AuthRepository implements IAuthRepository {
       [userId, tokenHash, expiresAt],
     );
   }
+
+  /**
+   * Stores a user's email verification token hash in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param tokenHash - The SHA-256 hash of the verification token.
+   * @param expiresAt - The expiration timestamp.
+   */
+  async createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+    logger.debug(`Storing email verification token hash for user ${userId}`);
+    await this.db.query(
+      `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, tokenHash, expiresAt],
+    );
+  }
 }
+

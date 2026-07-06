@@ -5,6 +5,7 @@ import { LoginRequestDto } from './dtos/login-request.dto';
 import { toRegisterResponseDto } from './dtos/register-response.dto';
 import { toUserDto } from './dtos/login-response.dto';
 import { logger } from '../shared/utils/logger';
+import { UnauthorizedError } from '../shared/errors/unauthorized.error';
 
 export class AuthController {
   constructor(private readonly authService: IAuthService) {}
@@ -69,6 +70,41 @@ export class AuthController {
         data: {
           user: toUserDto(user),
           accessToken,
+        },
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * POST /api/v1/auth/email-verification-link
+   *
+   * Requests a new email verification link. Checks if user exists and is not verified,
+   * stores verification token hash, and pushes email job to BullMQ.
+   */
+  sendEmailVerificationLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('Unauthorized');
+      }
+
+      const { userId, email } = req.user;
+      logger.info(`Email verification link request initiated for user ${userId}`);
+      await this.authService.generateEmailVerificationLink(userId, email);
+      logger.info(`Email verification link enqueued successfully for user ${userId}`);
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Verification link sent to your registered email',
+        data: {
+          email,
+          expiresIn: 600, // 10 minutes in seconds
         },
         meta: {
           requestId: req.headers['x-request-id'] ?? null,

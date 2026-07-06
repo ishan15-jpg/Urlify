@@ -2,6 +2,7 @@ import http from 'http';
 import { Application } from 'express';
 import { logger } from '../utils/logger';
 import { closeDatabasePool, db } from './database.config';
+import { redisClient } from './redis.config';
 
 /**
  * Singleton that owns the HTTP server lifecycle.
@@ -92,6 +93,13 @@ class ServerConfig {
 
       await closeDatabasePool();
       logger.info('Database pool closed successfully.');
+
+      try {
+        await redisClient.quit();
+        logger.info('Redis connection closed successfully.');
+      } catch (err) {
+        logger.error('Error closing Redis connection:', err);
+      }
 
       process.exit(0);
     });

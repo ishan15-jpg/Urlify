@@ -92,13 +92,15 @@ export class AuthRepository implements IAuthRepository {
    * @param tokenHash - The SHA-256 hash of the verification token.
    * @param expiresAt - The expiration timestamp.
    */
-  async createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+  async createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<EmailVerificationToken> {
     logger.debug(`Storing email verification token hash for user ${userId}`);
-    await this.db.query(
+    const result = await this.db.query<Record<string, unknown>>(
       `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
-       VALUES ($1, $2, $3)`,
+       VALUES ($1, $2, $3)
+       RETURNING id, user_id, token_hash, is_revoked, expires_at, is_expired, created_at, updated_at`,
       [userId, tokenHash, expiresAt],
     );
+    return this.toEmailVerificationTokenEntity(result.rows[0]);
   }
 
   /**

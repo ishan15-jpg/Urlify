@@ -1,14 +1,17 @@
 import { ConnectionOptions } from 'bullmq';
+import Redis from 'ioredis';
 
 class RedisConfig {
   private static instance: RedisConfig;
   private redisConfig: ConnectionOptions;
+  private client: Redis;
 
   private constructor() {
-    this.redisConfig = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number(process.env.REDIS_PORT) || 6379,
-    };
+    const host = process.env.REDIS_HOST || 'localhost';
+    const port = Number(process.env.REDIS_PORT) || 6379;
+
+    this.redisConfig = { host, port };
+    this.client = new Redis({ host, port });
   }
 
   public static getInstance(): RedisConfig {
@@ -21,6 +24,11 @@ class RedisConfig {
   public getConfig(): ConnectionOptions {
     return this.redisConfig;
   }
-};
 
+  public getClient(): Redis {
+    return this.client;
+  }
+}
+
+export const redisClient = RedisConfig.getInstance().getClient();
 export default RedisConfig.getInstance().getConfig();

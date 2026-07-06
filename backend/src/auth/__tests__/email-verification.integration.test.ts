@@ -19,6 +19,24 @@ jest.mock('../../shared/config/database.config', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Mock Redis Client
+// ---------------------------------------------------------------------------
+const mockRedisGet = jest.fn();
+const mockRedisSet = jest.fn().mockResolvedValue('OK');
+const mockRedisDel = jest.fn().mockResolvedValue(1);
+
+jest.mock('../../shared/config/redis.config', () => ({
+  redisClient: {
+    get: (...args: any[]) => mockRedisGet(...args),
+    set: (...args: any[]) => mockRedisSet(...args),
+    del: (...args: any[]) => mockRedisDel(...args),
+    quit: jest.fn().mockResolvedValue('OK'),
+  },
+  __esModule: true,
+  default: {},
+}));
+
+// ---------------------------------------------------------------------------
 // Mock BullMQ Queue
 // ---------------------------------------------------------------------------
 const mockAdd = jest.fn().mockResolvedValue({ id: 'mock-job-id' });
@@ -66,6 +84,11 @@ describe('POST /api/v1/auth/email-verification-link', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRedisGet.mockReset();
+    mockRedisSet.mockReset();
+    mockRedisDel.mockReset();
+    mockRedisSet.mockResolvedValue('OK');
+    mockRedisDel.mockResolvedValue(1);
     findByEmailSpy = jest.spyOn(AuthRepository.prototype, 'findByEmail');
     createEmailVerificationTokenSpy = jest.spyOn(AuthRepository.prototype, 'createEmailVerificationToken');
   });
@@ -112,7 +135,16 @@ describe('POST /api/v1/auth/email-verification-link', () => {
   it('creates token in DB, enqueues to BullMQ, and returns 200 on success', async () => {
     const user = makeUser({ isEmailVerified: false });
     findByEmailSpy.mockResolvedValue(user);
-    createEmailVerificationTokenSpy.mockResolvedValue(undefined);
+    createEmailVerificationTokenSpy.mockResolvedValue({
+      id: 'token-db-id',
+      userId: user.id,
+      tokenHash: 'hashed',
+      isRevoked: false,
+      isExpired: false,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const token = generateAccessToken({ userId: user.id, email: user.email, role: 'user' });
 
@@ -132,6 +164,12 @@ describe('POST /api/v1/auth/email-verification-link', () => {
       expect.any(String),
       expect.any(Date)
     );
+    expect(mockRedisSet).toHaveBeenCalledWith(
+      expect.stringContaining('verification_token:'),
+      expect.stringContaining('"tokenId":"token-db-id"'),
+      'EX',
+      600
+    );
     expect(mockAdd).toHaveBeenCalledWith('sendVerificationEmail', {
       to: user.email,
       verificationLink: expect.stringContaining('?token='),
@@ -147,6 +185,11 @@ describe('POST /api/v1/auth/verify-email', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRedisGet.mockReset();
+    mockRedisSet.mockReset();
+    mockRedisDel.mockReset();
+    mockRedisSet.mockResolvedValue('OK');
+    mockRedisDel.mockResolvedValue(1);
     findVerificationTokenByHashSpy = jest.spyOn(AuthRepository.prototype, 'findVerificationTokenByHash');
     findByIdSpy = jest.spyOn(AuthRepository.prototype, 'findById');
     updateVerificationTokenStatusSpy = jest.spyOn(AuthRepository.prototype, 'updateVerificationTokenStatus');
@@ -180,7 +223,8 @@ describe('POST /api/v1/auth/verify-email', () => {
     expect(res.body.message).toBe('Verification token is required');
   });
 
-  it('rejects when verification token is not found in database (401)', async () => {
+  it('rejects when verification token is not found in database on cache miss (401)', async () => {
+    mockRedisGet.mockResolvedValue(null);
     findVerificationTokenByHashSpy.mockResolvedValue(null);
 
     const res = await request(app)
@@ -190,9 +234,11 @@ describe('POST /api/v1/auth/verify-email', () => {
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toBe('Verification link is invalid or has expired');
+    expect(findVerificationTokenByHashSpy).toHaveBeenCalled();
   });
 
-  it('rejects when verification token is revoked (401)', async () => {
+  it('rejects when verification token is revoked on cache miss (401)', async () => {
+    mockRedisGet.mockResolvedValue(null);
     findVerificationTokenByHashSpy.mockResolvedValue({
       id: '1',
       userId: 'user-id',
@@ -212,7 +258,8 @@ describe('POST /api/v1/auth/verify-email', () => {
     expect(res.body.message).toBe('Verification link is invalid or has expired');
   });
 
-  it('rejects when verification token is expired (401)', async () => {
+  it('rejects when verification token is expired on cache miss (401)', async () => {
+    mockRedisGet.mockResolvedValue(null);
     findVerificationTokenByHashSpy.mockResolvedValue({
       id: '1',
       userId: 'user-id',
@@ -232,7 +279,8 @@ describe('POST /api/v1/auth/verify-email', () => {
     expect(res.body.message).toBe('Verification link is invalid or has expired');
   });
 
-  it('rejects when verification token is past its expiresAt timestamp (401)', async () => {
+  it('rejects when verification token is past its expiresAt timestamp on cache miss (401)', async () => {
+    mockRedisGet.mockResolvedValue(null);
     findVerificationTokenByHashSpy.mockResolvedValue({
       id: '1',
       userId: 'user-id',
@@ -253,6 +301,7 @@ describe('POST /api/v1/auth/verify-email', () => {
   });
 
   it('rejects when user is already verified (409)', async () => {
+    mockRedisGet.mockResolvedValue(null);
     findVerificationTokenByHashSpy.mockResolvedValue({
       id: '1',
       userId: 'user-id',
@@ -273,22 +322,12 @@ describe('POST /api/v1/auth/verify-email', () => {
     expect(res.body.message).toBe('This email is already verified');
   });
 
-  it('successfully verifies email and invalidates token (200)', async () => {
+  it('successfully verifies email and invalidates token on cache hit (200)', async () => {
     const unverifiedUser = makeUser({ id: 'user-id', isEmailVerified: false });
     const verifiedUser = makeUser({ id: 'user-id', isEmailVerified: true });
 
-    findVerificationTokenByHashSpy.mockResolvedValue({
-      id: 'token-db-id',
-      userId: 'user-id',
-      tokenHash: 'hashed',
-      isRevoked: false,
-      isExpired: false,
-      expiresAt: new Date(Date.now() + 100000),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    mockRedisGet.mockResolvedValue(JSON.stringify({ userId: 'user-id', tokenId: 'token-db-id' }));
 
-    // Mock findById to return unverified user on first call, and verified user on second call
     findByIdSpy
       .mockResolvedValueOnce(unverifiedUser)
       .mockResolvedValueOnce(verifiedUser);
@@ -306,10 +345,50 @@ describe('POST /api/v1/auth/verify-email', () => {
     expect(res.body.data.email).toBe(verifiedUser.email);
     expect(res.body.data.isEmailVerified).toBe(true);
 
-    expect(findVerificationTokenByHashSpy).toHaveBeenCalled();
+    expect(findVerificationTokenByHashSpy).not.toHaveBeenCalled(); // Cache hit avoids DB read
     expect(findByIdSpy).toHaveBeenCalledWith('user-id');
     expect(updateUserVerificationStatusSpy).toHaveBeenCalledWith('user-id', true);
     expect(updateVerificationTokenStatusSpy).toHaveBeenCalledWith('token-db-id', true, true);
+    expect(mockRedisDel).toHaveBeenCalledWith(expect.stringContaining('verification_token:'));
+  });
+
+  it('successfully verifies email on cache miss falling back to DB lookup (200)', async () => {
+    const unverifiedUser = makeUser({ id: 'user-id', isEmailVerified: false });
+    const verifiedUser = makeUser({ id: 'user-id', isEmailVerified: true });
+
+    mockRedisGet.mockResolvedValue(null); // Cache miss
+
+    findVerificationTokenByHashSpy.mockResolvedValue({
+      id: 'token-db-id',
+      userId: 'user-id',
+      tokenHash: 'hashed',
+      isRevoked: false,
+      isExpired: false,
+      expiresAt: new Date(Date.now() + 100000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    findByIdSpy
+      .mockResolvedValueOnce(unverifiedUser)
+      .mockResolvedValueOnce(verifiedUser);
+
+    updateUserVerificationStatusSpy.mockResolvedValue(undefined);
+    updateVerificationTokenStatusSpy.mockResolvedValue(undefined);
+
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'fallback-token' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe('Email verified successfully');
+
+    expect(findVerificationTokenByHashSpy).toHaveBeenCalled(); // DB fallback query
+    expect(findByIdSpy).toHaveBeenCalledWith('user-id');
+    expect(updateUserVerificationStatusSpy).toHaveBeenCalledWith('user-id', true);
+    expect(updateVerificationTokenStatusSpy).toHaveBeenCalledWith('token-db-id', true, true);
+    expect(mockRedisDel).toHaveBeenCalledWith(expect.stringContaining('verification_token:'));
   });
 });
 

@@ -32,8 +32,9 @@ export interface IAuthRepository {
    * @param userId - The ID of the user.
    * @param tokenHash - The SHA-256 hash of the verification token.
    * @param expiresAt - The expiration timestamp.
+   * @returns The created EmailVerificationToken entity.
    */
-  createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+  createEmailVerificationToken(userId: string, tokenHash: string, expiresAt: Date): Promise<EmailVerificationToken>;
 
   /**
    * Finds a user by their unique database ID.

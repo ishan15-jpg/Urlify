@@ -11,6 +11,7 @@ import { hashPassword, comparePassword } from '../shared/utils/password.util';
 import { generateAccessToken, generateRefreshToken } from '../shared/utils/token.util';
 import { logger } from '../shared/utils/logger';
 import { emailQueue } from '../shared/queues/email.queue';
+import { redisClient } from '../shared/config/redis.config';
 
 export class AuthService implements IAuthService {
   constructor(private readonly authRepository: IAuthRepository) {}
@@ -109,7 +110,13 @@ export class AuthService implements IAuthService {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     logger.debug(`Storing verification token hash in repository`);
-    await this.authRepository.createEmailVerificationToken(user.id, tokenHash, expiresAt);
+    const tokenRecord = await this.authRepository.createEmailVerificationToken(user.id, tokenHash, expiresAt);
+
+    // Caching in Redis with a 10-minute TTL (600s)
+    const redisKey = `verification_token:${tokenHash}`;
+    const redisValue = JSON.stringify({ userId: user.id, tokenId: tokenRecord.id });
+    logger.debug(`Caching verification token in Redis`);
+    await redisClient.set(redisKey, redisValue, 'EX', 600);
 
     // Push the email send job to BullMQ
     const clientUrl = process.env.CLIENT_URL;
@@ -135,31 +142,54 @@ export class AuthService implements IAuthService {
     
     // Hash the raw token
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const redisKey = `verification_token:${tokenHash}`;
 
-    // Retrieve the token details
-    const tokenRecord = await this.authRepository.findVerificationTokenByHash(tokenHash);
+    let userId: string | null = null;
+    let tokenId: string | null = null;
+
+    // Check Redis cache first
+    logger.debug(`Checking Redis cache for verification token`);
+    const cachedData = await redisClient.get(redisKey);
     
-    // If not found, revoked, expired, or past expiresAt, throw UnauthorizedError
-    if (
-      !tokenRecord ||
-      tokenRecord.isRevoked ||
-      tokenRecord.isExpired ||
-      new Date() > tokenRecord.expiresAt
-    ) {
-      logger.warn(`Email verification failed: Invalid or expired token`);
-      throw new UnauthorizedError('Verification link is invalid or has expired');
+    if (cachedData) {
+      logger.debug(`Redis cache hit for verification token`);
+      const parsed = JSON.parse(cachedData) as { userId: string; tokenId: string };
+      userId = parsed.userId;
+      tokenId = parsed.tokenId;
+    } else {
+      logger.debug(`Redis cache miss. Falling back to database lookup`);
+      // Retrieve the token details from database
+      const tokenRecord = await this.authRepository.findVerificationTokenByHash(tokenHash);
+      
+      // If not found, revoked, expired, or past expiresAt, throw UnauthorizedError
+      if (
+        !tokenRecord ||
+        tokenRecord.isRevoked ||
+        tokenRecord.isExpired ||
+        new Date() > tokenRecord.expiresAt
+      ) {
+        logger.warn(`Email verification failed: Invalid or expired token`);
+        throw new UnauthorizedError('Verification link is invalid or has expired');
+      }
+
+      userId = tokenRecord.userId;
+      tokenId = tokenRecord.id;
     }
 
     // Retrieve the user
-    const user = await this.authRepository.findById(tokenRecord.userId);
+    const user = await this.authRepository.findById(userId);
     if (!user) {
-      logger.warn(`Email verification failed: User ${tokenRecord.userId} not found`);
-      throw new NotFoundError('User', tokenRecord.userId);
+      logger.warn(`Email verification failed: User ${userId} not found`);
+      throw new NotFoundError('User', userId);
     }
 
     // If user is already verified
     if (user.isEmailVerified) {
       logger.warn(`Email verification failed: User ${user.id} email is already verified`);
+      // Clean up cache just in case it hits a verified user
+      if (cachedData) {
+        await redisClient.del(redisKey);
+      }
       throw new ConflictError('This email is already verified');
     }
 
@@ -168,7 +198,11 @@ export class AuthService implements IAuthService {
     await this.authRepository.updateUserVerificationStatus(user.id, true);
 
     logger.debug(`Invalidating token in repository`);
-    await this.authRepository.updateVerificationTokenStatus(tokenRecord.id, true, true);
+    await this.authRepository.updateVerificationTokenStatus(tokenId, true, true);
+
+    // Invalidate/delete from Redis cache
+    logger.debug(`Removing verification token from Redis cache`);
+    await redisClient.del(redisKey);
 
     logger.info(`Email verified successfully for user: ${user.id}`);
     

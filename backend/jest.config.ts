@@ -4,6 +4,9 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
 
+  // Global setups
+  setupFiles: ['<rootDir>/src/shared/test/setup.ts'],
+
   // Where Jest discovers tests
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.test.ts'],

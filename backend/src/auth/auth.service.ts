@@ -78,12 +78,19 @@ export class AuthService implements IAuthService {
     logger.debug(`Hashing refresh token`);
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     logger.debug(`Refresh token hashed`);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     logger.debug(`Storing refresh token hash in repository`);
-    this.authRepository.storeRefreshToken(user.id, tokenHash, expiresAt);
+    this.storeRefreshTokens(user.id, tokenHash);
 
     return { user, accessToken, refreshToken };
+  }
+
+  /** Background task helper to store refresh token to Redis and DB. */
+  private async storeRefreshTokens(userId: string, tokenHash: string): Promise<void> {
+    const refreshTokenRecord = await this.authRepository.storeRefreshToken(userId, tokenHash, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    const redisKey = `refresh_token:${tokenHash}`;
+    const redisValue = JSON.stringify({ userId, tokenId: refreshTokenRecord.id });
+    await redisClient.set(redisKey, redisValue, 'EX', 7 * 24 * 60 * 60);
   }
 
   /**

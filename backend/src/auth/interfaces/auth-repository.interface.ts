@@ -78,6 +78,29 @@ export interface IAuthRepository {
    * @returns The created PasswordResetToken entity.
    */
   createPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<PasswordResetToken>;
+
+  /**
+   * Looks up a password reset token by its hash.
+   *
+   * @param tokenHash - The SHA-256 token hash.
+   * @returns The password reset token record, or null if not found.
+   */
+  findPasswordResetTokenByHash(tokenHash: string): Promise<PasswordResetToken | null>;
+
+  /**
+   * Updates a user's password hash in the database.
+   *
+   * @param userId - The user ID.
+   * @param passwordHash - The new password hash.
+   */
+  updatePassword(userId: string, passwordHash: string): Promise<void>;
+
+  /**
+   * Hard deletes a password reset token from the database.
+   *
+   * @param tokenId - The token primary key ID.
+   */
+  deletePasswordResetToken(tokenId: string): Promise<void>;
 }
 
 

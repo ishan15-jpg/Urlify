@@ -67,9 +67,24 @@ class ValidateRequest {
       if (!result.success) {
         logger.warn(`Forgot password request failed due to invalid request body`);
         const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
-        return next(new ValidationError(firstMessage, result.error.flatten));
+        return next(new ValidationError(firstMessage, result.error.flatten()));
       }
       logger.debug(`Forgot password request validated successfully`)
+      req.body = result.data; // now typed & sanitized
+      next();
+    };
+  }
+
+  validateResetPasswordRequest = (schema: z.ZodType) => {
+    return (req: Request, _res: Response, next: NextFunction) => {
+      logger.debug(`Validating reset password request`)
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        logger.warn(`Reset password request failed due to invalid request body`);
+        const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
+        return next(new ValidationError(firstMessage, result.error.flatten()));
+      }
+      logger.debug(`Reset password request validated successfully`)
       req.body = result.data; // now typed & sanitized
       next();
     };

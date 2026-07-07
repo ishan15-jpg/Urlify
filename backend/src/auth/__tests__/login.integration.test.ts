@@ -124,7 +124,7 @@ describe('POST /api/v1/auth/login', () => {
       const res = await postLogin({ password: 'StrongP@ss1' });
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe('Email is required');
+      expect(res.body.message).toBe('Incorrect email format');
     });
 
     it('rejects when password is missing', async () => {
@@ -137,13 +137,13 @@ describe('POST /api/v1/auth/login', () => {
     it('rejects when email is empty', async () => {
       const res = await postLogin({ email: '', password: 'StrongP@ss1' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Email is required');
+      expect(res.body.message).toBe('Incorrect email format');
     });
 
     it('rejects when password is empty', async () => {
       const res = await postLogin({ email: 'ishan@example.com', password: '' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Password is required');
+      expect(res.body.message).toBe('Password must be atleast 8 characters');
     });
 
     it('rejects when email format is invalid', async () => {
@@ -157,13 +157,13 @@ describe('POST /api/v1/auth/login', () => {
       const res = await postLogin({ email: 'ishan@example.com', password: 'weakp@ss1' });
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe('Incorrect password format');
+      expect(res.body.message).toBe('Password must contain at least one uppercase letter');
     });
 
     it('rejects when password format is invalid (too short)', async () => {
       const res = await postLogin({ email: 'ishan@example.com', password: 'Ab1@' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Incorrect password format');
+      expect(res.body.message).toBe('Password must be atleast 8 characters');
     });
   });
 

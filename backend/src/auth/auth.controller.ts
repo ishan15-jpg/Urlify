@@ -174,4 +174,33 @@ export class AuthController {
       next(err);
     }
   };
+
+  /**
+   * POST /api/v1/auth/reset-password
+   *
+   * Resets the user's password using the token.
+   */
+  resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { token, newPassword } = req.body as { token: string; newPassword: string };
+      logger.info(`Reset password request initiated`);
+
+      // Call service synchronously to update password
+      await this.authService.resetPassword({ token, newPassword });
+      logger.info(`Password reset successfully`);
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Password reset successfully. Please log in with your new password.',
+        data: null,
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

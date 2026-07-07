@@ -224,5 +224,51 @@ export class AuthRepository implements IAuthRepository {
       updatedAt: new Date(row['updated_at'] as string),
     };
   }
+
+  /**
+   * Looks up a password reset token by its hash.
+   */
+  async findPasswordResetTokenByHash(tokenHash: string): Promise<PasswordResetToken | null> {
+    logger.debug(`Database query: findPasswordResetTokenByHash initiated`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, user_id, token_hash, is_revoked, expires_at, is_expired, created_at, updated_at
+       FROM password_reset_tokens
+       WHERE token_hash = $1
+       LIMIT 1`,
+      [tokenHash],
+    );
+
+    if (!result.rows[0]) {
+      logger.debug(`Password reset token not found`);
+      return null;
+    }
+    logger.debug(`Password reset token found`);
+    return this.toPasswordResetTokenEntity(result.rows[0]);
+  }
+
+  /**
+   * Updates a user's password hash in the database.
+   */
+  async updatePassword(userId: string, passwordHash: string): Promise<void> {
+    logger.debug(`Updating password for user ${userId}`);
+    await this.db.query(
+      `UPDATE users
+       SET password_hash = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [userId, passwordHash],
+    );
+  }
+
+  /**
+   * Hard deletes a password reset token from the database.
+   */
+  async deletePasswordResetToken(tokenId: string): Promise<void> {
+    logger.debug(`Deleting password reset token ${tokenId} from database`);
+    await this.db.query(
+      `DELETE FROM password_reset_tokens
+       WHERE id = $1`,
+      [tokenId],
+    );
+  }
 }
 

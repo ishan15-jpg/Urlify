@@ -54,6 +54,7 @@ describe('AuthController.register', () => {
       generateEmailVerificationLink: jest.fn(),
       verifyEmail: jest.fn(),
       processForgotPassword: jest.fn(),
+      resetPassword: jest.fn(),
     };
     controller = new AuthController(mockService);
   });

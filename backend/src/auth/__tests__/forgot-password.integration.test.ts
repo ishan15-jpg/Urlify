@@ -110,7 +110,7 @@ describe('POST /api/v1/auth/forgot-password', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.message).toBe('Email is required');
+    expect(res.body.message).toBe('Incorrect email format');
   });
 
   it('rejects when email format is invalid (400)', async () => {

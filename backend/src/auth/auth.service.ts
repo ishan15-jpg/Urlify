@@ -269,4 +269,77 @@ export class AuthService implements IAuthService {
     });
     logger.info(`Password reset background workflow completed successfully for user ${userId}`);
   }
+
+  /**
+   * Resets a user's password using a reset token. Checks token validity,
+   * updates the user's password synchronously, and deletes the token in the background.
+   */
+  async resetPassword(dto: { token: string; newPassword: string }): Promise<void> {
+    const { token, newPassword } = dto;
+    logger.debug(`Reset password process initiated`);
+
+    // Hash the token using SHA-256
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const redisKey = `password_reset_token:${tokenHash}`;
+
+    let userId: string | null = null;
+    let tokenId: string | null = null;
+
+    // Check Redis cache first
+    logger.debug(`Checking Redis cache for password reset token`);
+    const cachedData = await redisClient.get(redisKey);
+
+    if (cachedData) {
+      logger.debug(`Redis cache hit for password reset token`);
+      const parsed = JSON.parse(cachedData) as { userId: string; tokenId: string };
+      userId = parsed.userId;
+      tokenId = parsed.tokenId;
+    } else {
+      logger.debug(`Redis cache miss. Falling back to database lookup`);
+      const tokenRecord = await this.authRepository.findPasswordResetTokenByHash(tokenHash);
+
+      if (
+        !tokenRecord ||
+        tokenRecord.isRevoked ||
+        tokenRecord.isExpired ||
+        new Date() > tokenRecord.expiresAt
+      ) {
+        logger.warn(`Password reset failed: Invalid or expired token`);
+        throw new UnauthorizedError('Reset token is invalid or has expired');
+      }
+
+      userId = tokenRecord.userId;
+      tokenId = tokenRecord.id;
+    }
+
+    // Fetch the user
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      logger.warn(`Password reset failed: User ${userId} not found`);
+      throw new NotFoundError('User', userId);
+    }
+
+    // Hash the new password using password hashing helper
+    const newPasswordHash = await hashPassword(newPassword);
+
+    // Synchronously update the password
+    logger.debug(`Updating user password synchronously in database`);
+    await this.authRepository.updatePassword(user.id, newPasswordHash);
+    logger.info(`Password updated synchronously for user ${user.id}`);
+
+    // Asynchronously delete token from Redis and PostgreSQL database (fire-and-forget background task)
+    this.cleanupResetToken(redisKey, tokenId).catch((err) => {
+      logger.error(`Error deleting reset token during background cleanup:`, err);
+    });
+  }
+
+  /** Background task helper to delete reset token from Redis and DB. */
+  private async cleanupResetToken(redisKey: string, tokenId: string): Promise<void> {
+    logger.debug(`Removing password reset token from Redis cache`);
+    await redisClient.del(redisKey);
+
+    logger.debug(`Deleting password reset token ${tokenId} from database`);
+    await this.authRepository.deletePasswordResetToken(tokenId);
+    logger.info(`Password reset token clean up completed successfully`);
+  }
 }

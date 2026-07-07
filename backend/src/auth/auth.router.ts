@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authController } from './auth.module';
 import validate from '../shared/middlewares/validate.middleware';
-import { loginSchema, registerSchema, verifyEmailSchema, forgotPasswordSchema } from './auth.schema';
+import { loginSchema, registerSchema, verifyEmailSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema';
 import { logger } from '../shared/utils/logger';
 import { authenticate } from '../shared/middlewares/auth.middleware';
 
@@ -49,6 +49,14 @@ authRouter.post('/forgot-password',
     (_, __, next) => { logger.info(`Forgot password request received`); next(); },
     validate.validateForgotPasswordRequest(forgotPasswordSchema),
     authController.forgotPassword
+);
+
+// POST /api/v1/auth/reset-password
+// Middleware chain: validate(resetPasswordSchema) → authController.resetPassword
+authRouter.post('/reset-password',
+    (_, __, next) => { logger.info(`Reset password request received`); next(); },
+    validate.validateResetPasswordRequest(resetPasswordSchema),
+    authController.resetPassword
 );
 
 

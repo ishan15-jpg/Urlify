@@ -45,5 +45,13 @@ export interface IAuthService {
    * @param email - The email to check and send reset link.
    */
   processForgotPassword(email: string): Promise<void>;
+
+  /**
+   * Resets a user's password using a reset token. Checks token validity,
+   * updates the user's password synchronously, and deletes the token in the background.
+   *
+   * @param dto - Token and new password details.
+   */
+  resetPassword(dto: { token: string; newPassword: string }): Promise<void>;
 }
 

@@ -37,5 +37,13 @@ export interface IAuthService {
    * @returns The updated User entity.
    */
   verifyEmail(token: string): Promise<User>;
+
+  /**
+   * Initiates forgot-password process: generates reset token, stores it in DB/cache,
+   * and pushes email sending job to the password reset queue (all in the background).
+   *
+   * @param email - The email to check and send reset link.
+   */
+  processForgotPassword(email: string): Promise<void>;
 }
 

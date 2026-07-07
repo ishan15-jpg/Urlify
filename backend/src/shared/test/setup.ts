@@ -10,3 +10,20 @@ jest.mock('ioredis', () => {
     };
   });
 });
+
+// Global Jest setup to mock bullmq queues and workers
+jest.mock('bullmq', () => {
+  return {
+    Queue: jest.fn().mockImplementation(() => {
+      return {
+        add: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
+      };
+    }),
+    Worker: jest.fn().mockImplementation(() => {
+      return {
+        close: jest.fn().mockResolvedValue(undefined),
+        on: jest.fn(),
+      };
+    }),
+  };
+});

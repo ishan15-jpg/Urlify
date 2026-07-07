@@ -12,6 +12,7 @@ import { generateAccessToken, generateRefreshToken } from '../shared/utils/token
 import { logger } from '../shared/utils/logger';
 import { emailQueue } from '../shared/queues/email.queue';
 import { redisClient } from '../shared/config/redis.config';
+import { passwordResetQueue } from '../shared/queues/password-reset.queue';
 
 export class AuthService implements IAuthService {
   constructor(private readonly authRepository: IAuthRepository) {}
@@ -79,7 +80,7 @@ export class AuthService implements IAuthService {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     logger.debug(`Storing refresh token hash in repository`);
-    await this.authRepository.storeRefreshToken(user.id, tokenHash, expiresAt);
+    this.authRepository.storeRefreshToken(user.id, tokenHash, expiresAt);
 
     return { user, accessToken, refreshToken };
   }
@@ -116,14 +117,14 @@ export class AuthService implements IAuthService {
     const redisKey = `verification_token:${tokenHash}`;
     const redisValue = JSON.stringify({ userId: user.id, tokenId: tokenRecord.id });
     logger.debug(`Caching verification token in Redis`);
-    await redisClient.set(redisKey, redisValue, 'EX', 600);
+    redisClient.set(redisKey, redisValue, 'EX', 600);
 
     // Push the email send job to BullMQ
     const clientUrl = process.env.CLIENT_URL;
     const verificationLink = `${clientUrl}?token=${rawToken}`;
     
     logger.debug(`Enqueuing email send job to BullMQ`);
-    await emailQueue.add('sendVerificationEmail', {
+    emailQueue.add('sendVerificationEmail', {
       to: email,
       verificationLink,
     });
@@ -188,7 +189,7 @@ export class AuthService implements IAuthService {
       logger.warn(`Email verification failed: User ${user.id} email is already verified`);
       // Clean up cache just in case it hits a verified user
       if (cachedData) {
-        await redisClient.del(redisKey);
+        redisClient.del(redisKey);
       }
       throw new ConflictError('This email is already verified');
     }
@@ -198,11 +199,11 @@ export class AuthService implements IAuthService {
     await this.authRepository.updateUserVerificationStatus(user.id, true);
 
     logger.debug(`Invalidating token in repository`);
-    await this.authRepository.updateVerificationTokenStatus(tokenId, true, true);
+    this.authRepository.updateVerificationTokenStatus(tokenId, true, true);
 
     // Invalidate/delete from Redis cache
     logger.debug(`Removing verification token from Redis cache`);
-    await redisClient.del(redisKey);
+    redisClient.del(redisKey);
 
     logger.info(`Email verified successfully for user: ${user.id}`);
     
@@ -212,5 +213,60 @@ export class AuthService implements IAuthService {
       throw new NotFoundError('User', user.id);
     }
     return updatedUser;
+  }
+
+  /**
+   * Initiates forgot-password process: generates reset token, stores it in DB/cache,
+   * and pushes email sending job to the password reset queue (all in the background).
+   *
+   * @param email - The email to check and send reset link.
+   */
+  async processForgotPassword(email: string): Promise<void> {
+    logger.info(`Forgot password request received for email: ${email}`);
+    const user = await this.authRepository.findByEmail(email);
+    
+    // Account enumeration protection: return success even if user not found or blacklisted
+    if (!user || user.isBlacklisted) {
+      logger.info(`Forgot password execution bypassed: User not found or blacklisted for email: ${email}`);
+      return;
+    }
+
+    // Generate secure random token
+    logger.debug(`Generating password reset token`);
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+
+    // Kick off storage and queuing asynchronously in the background (fire-and-forget)
+    this.storeAndSendForgotPasswordLink(user.id, email, tokenHash, rawToken, expiresAt).catch(err => {
+      logger.error(`Error processing forgot password background workflow for user ${user.id}:`, err);
+    });
+  }
+
+  /** Background task helper to perform token database persistence, cache write, and enqueueing. */
+  private async storeAndSendForgotPasswordLink(
+    userId: string,
+    email: string,
+    tokenHash: string,
+    rawToken: string,
+    expiresAt: Date
+  ): Promise<void> {
+    logger.debug(`Storing password reset token in repository`);
+    const tokenRecord = await this.authRepository.createPasswordResetToken(userId, tokenHash, expiresAt);
+
+    logger.debug(`Caching password reset token in Redis`);
+    const redisKey = `password_reset_token:${tokenHash}`;
+    const redisValue = JSON.stringify({ userId, tokenId: tokenRecord.id });
+    redisClient.set(redisKey, redisValue, 'EX', 300); // 5 minutes TTL
+
+    const clientUrl = process.env.CLIENT_URL;
+    const resetLink = `${clientUrl}?token=${rawToken}`;
+
+    logger.debug(`Enqueuing password reset email job to BullMQ`);
+    await passwordResetQueue.add('sendPasswordResetEmail', {
+      to: email,
+      resetLink,
+    });
+    logger.info(`Password reset background workflow completed successfully for user ${userId}`);
   }
 }

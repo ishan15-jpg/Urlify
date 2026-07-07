@@ -1,4 +1,4 @@
-import { User, EmailVerificationToken } from '../auth.entity';
+import { User, EmailVerificationToken, PasswordResetToken } from '../auth.entity';
 
 export interface IAuthRepository {
   /**
@@ -68,6 +68,16 @@ export interface IAuthRepository {
    * @param isVerified - The new is_email_verified state.
    */
   updateUserVerificationStatus(userId: string, isVerified: boolean): Promise<void>;
+
+  /**
+   * Stores a user's password reset token hash in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param tokenHash - The SHA-256 hash of the password reset token.
+   * @param expiresAt - The expiration timestamp.
+   * @returns The created PasswordResetToken entity.
+   */
+  createPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<PasswordResetToken>;
 }
 
 

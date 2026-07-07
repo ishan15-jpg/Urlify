@@ -1,9 +1,10 @@
 import { config } from 'dotenv';
 config();
 import { emailWorker } from './shared/queues/email.worker';
+import { passwordResetWorker } from './shared/queues/password-reset.worker';
 import { logger } from './shared/utils/logger';
 
-logger.info('Email Worker Service is starting up...');
+logger.info('Worker Service is starting up...');
 
 /**
  * Handle graceful shutdown of the worker process.
@@ -19,8 +20,11 @@ async function gracefulShutdown(signal: string) {
   }, 10_000);
 
   try {
-    await emailWorker.close();
-    logger.info('Email Worker closed successfully.');
+    await Promise.all([
+      emailWorker.close(),
+      passwordResetWorker.close(),
+    ]);
+    logger.info('All workers closed successfully.');
     clearTimeout(forceExitTimeout);
     process.exit(0);
   } catch (error) {

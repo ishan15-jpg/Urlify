@@ -14,25 +14,30 @@ export const registerSchema = z.object({
 export type RegisterSchemaType = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  email: z
-    .string({ message: 'Email is required' })
-    .min(1, 'Email is required')
-    .email('Incorrect email format'),
+  email: z.email('Incorrect email format'),
   password: z
     .string({ message: 'Password is required' })
-    .min(1, 'Password is required')
-    .min(8, 'Incorrect password format')
-    .regex(/[A-Z]/, 'Incorrect password format')
-    .regex(/[0-9]/, 'Incorrect password format')
-    .regex(/[!@#$%^&*_]/, 'Incorrect password format'),
+    .min(8, 'Password must be atleast 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[!@#$%^&*_]/, 'Password must contain at least one special character'),
 });
 
 export type LoginSchemaType = z.infer<typeof loginSchema>;
 
 export const verifyEmailSchema = z.object({
-  token: z.string({ message: 'Verification token is required' }).min(1, 'Verification token is required'),
+  token: z
+    .string({ message: 'Verification token is required' })
+    .min(1, 'Verification token is required'),
 });
 
 export type VerifyEmailSchemaType = z.infer<typeof verifyEmailSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .email('Incorrect email format')
+});
+
+export type ForgotPasswordSchemaType = z.infer<typeof forgotPasswordSchema>;
 
 

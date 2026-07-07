@@ -26,3 +26,14 @@ export interface EmailVerificationToken {
   updatedAt: Date;
 }
 
+export interface PasswordResetToken {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  isRevoked: boolean;
+  expiresAt: Date;
+  isExpired: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+

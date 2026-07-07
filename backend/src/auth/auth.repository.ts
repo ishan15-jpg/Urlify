@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { IAuthRepository } from './interfaces/auth-repository.interface';
-import { User, EmailVerificationToken } from './auth.entity';
+import { User, EmailVerificationToken, PasswordResetToken } from './auth.entity';
 import { logger } from '../shared/utils/logger';
 
 
@@ -180,6 +180,39 @@ export class AuthRepository implements IAuthRepository {
 
   /** Maps a raw database row to the EmailVerificationToken domain entity. */
   private toEmailVerificationTokenEntity(row: Record<string, unknown>): EmailVerificationToken {
+    return {
+      id: String(row['id']),
+      userId: row['user_id'] as string,
+      tokenHash: row['token_hash'] as string,
+      isRevoked: row['is_revoked'] as boolean,
+      expiresAt: new Date(row['expires_at'] as string),
+      isExpired: row['is_expired'] as boolean,
+      createdAt: new Date(row['created_at'] as string),
+      updatedAt: new Date(row['updated_at'] as string),
+    };
+  }
+
+  /**
+   * Stores a user's password reset token hash in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param tokenHash - The SHA-256 hash of the password reset token.
+   * @param expiresAt - The expiration timestamp.
+   * @returns The created PasswordResetToken entity.
+   */
+  async createPasswordResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<PasswordResetToken> {
+    logger.debug(`Storing password reset token hash for user ${userId}`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)
+       RETURNING id, user_id, token_hash, is_revoked, expires_at, is_expired, created_at, updated_at`,
+      [userId, tokenHash, expiresAt],
+    );
+    return this.toPasswordResetTokenEntity(result.rows[0]);
+  }
+
+  /** Maps a raw database row to the PasswordResetToken domain entity. */
+  private toPasswordResetTokenEntity(row: Record<string, unknown>): PasswordResetToken {
     return {
       id: String(row['id']),
       userId: row['user_id'] as string,

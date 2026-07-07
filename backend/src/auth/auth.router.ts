@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authController } from './auth.module';
 import validate from '../shared/middlewares/validate.middleware';
-import { loginSchema, registerSchema, verifyEmailSchema } from './auth.schema';
+import { loginSchema, registerSchema, verifyEmailSchema, forgotPasswordSchema } from './auth.schema';
 import { logger } from '../shared/utils/logger';
 import { authenticate } from '../shared/middlewares/auth.middleware';
 
@@ -41,6 +41,14 @@ authRouter.post('/verify-email',
     (_, __, next) => { logger.info(`Email verification request received`); next(); },
     validate.validateVerifyEmailRequest(verifyEmailSchema),
     authController.verifyEmail
+);
+
+// POST /api/v1/auth/forgot-password
+// Middleware chain: validate(forgotPasswordSchema) → authController.forgotPassword
+authRouter.post('/forgot-password',
+    (_, __, next) => { logger.info(`Forgot password request received`); next(); },
+    validate.validateForgotPasswordRequest(forgotPasswordSchema),
+    authController.forgotPassword
 );
 
 

@@ -146,4 +146,32 @@ export class AuthController {
       next(err);
     }
   };
+
+  /**
+   * POST /api/v1/auth/forgot-password
+   *
+   * Initiates the forgot-password workflow.
+   */
+  forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = req.body as { email: string };
+      logger.info(`Forgot password request initiated for email ${email}`);
+
+      await this.authService.processForgotPassword(email);
+      logger.info(`Forgot password workflow triggered for email ${email}`);
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'If an account exists with this email, a reset link has been sent',
+        data: null,
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

@@ -6,9 +6,10 @@ import { LoginRequestDto } from './dtos/login-request.dto';
 import { User } from './auth.entity';
 import { ConflictError } from '../shared/errors/conflict.error';
 import { UnauthorizedError } from '../shared/errors/unauthorized.error';
+import { ForbiddenError } from '../shared/errors/forbidden.error';
 import { NotFoundError } from '../shared/errors/not-found.error';
 import { hashPassword, comparePassword } from '../shared/utils/password.util';
-import { generateAccessToken, generateRefreshToken } from '../shared/utils/token.util';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../shared/utils/token.util';
 import { logger } from '../shared/utils/logger';
 import { emailQueue } from '../shared/queues/email.queue';
 import { redisClient } from '../shared/config/redis.config';
@@ -341,5 +342,91 @@ export class AuthService implements IAuthService {
     logger.debug(`Deleting password reset token ${tokenId} from database`);
     await this.authRepository.deletePasswordResetToken(tokenId);
     logger.info(`Password reset token clean up completed successfully`);
+  }
+
+  /**
+   * Refreshes user session using a refresh token.
+   * Compares token hash against cache/database, checks for reuse (revocation) to prevent theft,
+   * updates token state synchronously, and returns new tokens.
+   */
+  async refreshSession(oldToken: string): Promise<{ accessToken: string; newRefreshToken: string }> {
+    logger.debug(`Refresh session process initiated`);
+
+    // 1. Verify token signature and extract user info
+    let payload: any;
+    try {
+      payload = verifyRefreshToken(oldToken);
+    } catch (err) {
+      logger.warn(`Refresh token signature verification failed`);
+      throw new UnauthorizedError('Refresh token is invalid or has expired. Please log in again.');
+    }
+
+    const userId = payload.userId;
+    const oldTokenHash = crypto.createHash('sha256').update(oldToken).digest('hex');
+    const oldRedisKey = `refresh_token:${oldTokenHash}`;
+
+    let tokenId: string | null = null;
+
+    // 2. Lookup old token in Redis cache
+    logger.debug(`Checking Redis cache for refresh token`);
+    const cachedData = await redisClient.get(oldRedisKey);
+
+    if (cachedData) {
+      logger.debug(`Redis cache hit for refresh token`);
+      const parsed = JSON.parse(cachedData) as { userId: string; tokenId: string };
+      tokenId = parsed.tokenId;
+    } else {
+      logger.debug(`Redis cache miss. Falling back to database lookup`);
+      const tokenRecord = await this.authRepository.findRefreshTokenByHash(oldTokenHash);
+
+      if (!tokenRecord) {
+        logger.warn(`Refresh token not found in database`);
+        throw new UnauthorizedError('Refresh token is invalid or has expired. Please log in again.');
+      }
+
+      // Check if token was revoked (reuse detection / potential theft)
+      if (tokenRecord.isRevoked) {
+        logger.warn(`Potential refresh token reuse detected for user ${userId}. Revoking all sessions.`);
+        await this.authRepository.deleteAllRefreshTokensForUser(userId);
+        throw new ForbiddenError('Refresh token has been reused. Access denied and all sessions revoked.');
+      }
+
+      // Check if token is expired
+      if (tokenRecord.isExpired || new Date() > tokenRecord.expiresAt) {
+        logger.warn(`Refresh token has expired in database`);
+        throw new UnauthorizedError('Refresh token is invalid or has expired. Please log in again.');
+      }
+
+      tokenId = tokenRecord.id;
+    }
+
+    // 3. Fetch user
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      logger.warn(`Refresh failed: User ${userId} not found`);
+      throw new NotFoundError('User', userId);
+    }
+
+    // 4. Generate new access and refresh tokens
+    const tokenPayload = { userId: user.id, email: user.email, role: 'user' };
+    const accessToken = generateAccessToken(tokenPayload);
+    const newRefreshToken = generateRefreshToken(tokenPayload);
+    const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    // 5. Rotate tokens synchronously
+    logger.debug(`Revoking old refresh token in database and cache`);
+    await this.authRepository.revokeRefreshToken(tokenId!);
+    await redisClient.del(oldRedisKey);
+
+    logger.debug(`Storing and caching new refresh token`);
+    const newTokenRecord = await this.authRepository.storeRefreshToken(user.id, newRefreshTokenHash, newExpiresAt);
+    
+    const newRedisKey = `refresh_token:${newRefreshTokenHash}`;
+    const newRedisValue = JSON.stringify({ userId: user.id, tokenId: newTokenRecord.id });
+    await redisClient.set(newRedisKey, newRedisValue, 'EX', 7 * 24 * 60 * 60);
+
+    logger.info(`Session successfully refreshed for user ${user.id}`);
+    return { accessToken, newRefreshToken };
   }
 }

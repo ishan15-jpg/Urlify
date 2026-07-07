@@ -76,13 +76,15 @@ export class AuthRepository implements IAuthRepository {
    * @param tokenHash - The SHA-256 hash of the refresh token.
    * @param expiresAt - The expiration timestamp.
    */
-  async storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
+  async storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<{ id: string }> {
     logger.debug(`Storing refresh token for user ${userId}`);
-    await this.db.query(
+    const result = await this.db.query<{ id: string }>(
       `INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-       VALUES ($1, $2, $3)`,
+       VALUES ($1, $2, $3)
+       RETURNING id`,
       [userId, tokenHash, expiresAt],
     );
+    return result.rows[0];
   }
 
   /**
@@ -268,6 +270,63 @@ export class AuthRepository implements IAuthRepository {
       `DELETE FROM password_reset_tokens
        WHERE id = $1`,
       [tokenId],
+    );
+  }
+
+  /**
+   * Looks up a refresh token by its hash.
+   */
+  async findRefreshTokenByHash(tokenHash: string): Promise<any | null> {
+    logger.debug(`Database query: findRefreshTokenByHash initiated`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, user_id, token_hash, is_revoked, expires_at, is_expired, created_at, updated_at
+       FROM refresh_tokens
+       WHERE token_hash = $1
+       LIMIT 1`,
+      [tokenHash],
+    );
+
+    if (!result.rows[0]) {
+      logger.debug(`Refresh token not found`);
+      return null;
+    }
+    logger.debug(`Refresh token found`);
+    const row = result.rows[0];
+    return {
+      id: String(row['id']),
+      userId: row['user_id'] as string,
+      tokenHash: row['token_hash'] as string,
+      isRevoked: row['is_revoked'] as boolean,
+      expiresAt: new Date(row['expires_at'] as string),
+      isExpired: row['is_expired'] as boolean,
+      createdAt: new Date(row['created_at'] as string),
+      updatedAt: new Date(row['updated_at'] as string),
+    };
+  }
+
+  /**
+   * Marks a refresh token as revoked.
+   */
+  async revokeRefreshToken(tokenId: string): Promise<void> {
+    logger.debug(`Revoking refresh token ${tokenId} in database`);
+    await this.db.query(
+      `UPDATE refresh_tokens
+       SET is_revoked = true, is_expired = true, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [tokenId],
+    );
+  }
+
+  /**
+   * Marks all active refresh tokens of a user as revoked.
+   */
+  async deleteAllRefreshTokensForUser(userId: string): Promise<void> {
+    logger.debug(`Revoking all active refresh tokens for user ${userId} in database`);
+    await this.db.query(
+      `UPDATE refresh_tokens
+       SET is_revoked = true, is_expired = true, updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1`,
+      [userId],
     );
   }
 }

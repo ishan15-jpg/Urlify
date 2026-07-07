@@ -6,6 +6,7 @@ import { toRegisterResponseDto } from './dtos/register-response.dto';
 import { toUserDto } from './dtos/login-response.dto';
 import { logger } from '../shared/utils/logger';
 import { UnauthorizedError } from '../shared/errors/unauthorized.error';
+import { ValidationError } from '../shared/errors/validation.error';
 
 export class AuthController {
   constructor(private readonly authService: IAuthService) {}
@@ -194,6 +195,49 @@ export class AuthController {
         statusCode: 200,
         message: 'Password reset successfully. Please log in with your new password.',
         data: null,
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * POST /api/v1/auth/refresh
+   *
+   * Refreshes the user's session and returns a new access token in the response body.
+   */
+  refresh = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const oldRefreshToken = req.cookies?.refreshToken;
+      if (!oldRefreshToken) {
+        logger.warn(`Refresh token cookie is missing`);
+        throw new ValidationError('Refresh token is required');
+      }
+
+      logger.info(`Session refresh request received`);
+      const { accessToken, newRefreshToken } = await this.authService.refreshSession(oldRefreshToken);
+
+      // Set the new refresh token in a secure cookie
+      res.cookie('refreshToken', newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      logger.info(`Session refreshed successfully`);
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Access token refreshed successfully',
+        data: {
+          accessToken,
+          expiresIn: 900, // 15 minutes in seconds
+        },
         meta: {
           requestId: req.headers['x-request-id'] ?? null,
           timestamp: new Date().toISOString(),

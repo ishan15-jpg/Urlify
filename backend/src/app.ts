@@ -1,11 +1,13 @@
 import { config } from 'dotenv';
 config();
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import { errorMiddleware } from './shared/middlewares/error.middleware';
 import { authRouter } from './auth';
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
 // Basic health check route
 app.get('/health', (_, res) => {

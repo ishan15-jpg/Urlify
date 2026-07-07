@@ -47,7 +47,7 @@ describe('POST /api/v1/auth/login', () => {
       .mockResolvedValue(VALID_USER);
     jest
       .spyOn(AuthRepository.prototype, 'storeRefreshToken')
-      .mockResolvedValue(undefined);
+      .mockResolvedValue({ id: 'mock-id' });
     comparePasswordSpy = jest
       .spyOn(passwordUtil, 'comparePassword')
       .mockResolvedValue(true);

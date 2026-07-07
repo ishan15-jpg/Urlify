@@ -59,4 +59,11 @@ authRouter.post('/reset-password',
     authController.resetPassword
 );
 
+// POST /api/v1/auth/refresh
+// Middleware chain: authController.refresh
+authRouter.post('/refresh',
+    (_, __, next) => { logger.info(`Refresh token request received`); next(); },
+    authController.refresh
+);
+
 

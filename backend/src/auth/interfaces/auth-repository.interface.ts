@@ -23,8 +23,9 @@ export interface IAuthRepository {
    * @param userId - The ID of the user.
    * @param tokenHash - The SHA-256 hash of the refresh token.
    * @param expiresAt - The expiration timestamp.
+   * @returns The created refresh token's database record info.
    */
-  storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+  storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<{ id: string }>;
 
   /**
    * Stores a user's email verification token hash in the database.
@@ -101,6 +102,28 @@ export interface IAuthRepository {
    * @param tokenId - The token primary key ID.
    */
   deletePasswordResetToken(tokenId: string): Promise<void>;
+
+  /**
+   * Looks up a refresh token by its hash.
+   *
+   * @param tokenHash - The SHA-256 token hash.
+   * @returns The refresh token record, or null if not found.
+   */
+  findRefreshTokenByHash(tokenHash: string): Promise<any | null>;
+
+  /**
+   * Marks a refresh token as revoked.
+   *
+   * @param tokenId - The token database ID.
+   */
+  revokeRefreshToken(tokenId: string): Promise<void>;
+
+  /**
+   * Marks all refresh tokens of a user as revoked.
+   *
+   * @param userId - The ID of the user.
+   */
+  deleteAllRefreshTokensForUser(userId: string): Promise<void>;
 }
 
 

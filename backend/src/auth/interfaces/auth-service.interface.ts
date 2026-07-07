@@ -53,5 +53,14 @@ export interface IAuthService {
    * @param dto - Token and new password details.
    */
   resetPassword(dto: { token: string; newPassword: string }): Promise<void>;
+
+  /**
+   * Refreshes user session using a refresh token.
+   * Compares token hash against cache/database, checks for reuse (revocation) to prevent theft,
+   * updates token state synchronously, and returns new tokens.
+   *
+   * @param oldToken - The current raw refresh token.
+   */
+  refreshSession(oldToken: string): Promise<{ accessToken: string; newRefreshToken: string }>;
 }
 

@@ -41,6 +41,9 @@ function makeMockRepository(): jest.Mocked<IAuthRepository> {
     findPasswordResetTokenByHash: jest.fn(),
     updatePassword: jest.fn(),
     deletePasswordResetToken: jest.fn(),
+    findRefreshTokenByHash: jest.fn(),
+    revokeRefreshToken: jest.fn(),
+    deleteAllRefreshTokensForUser: jest.fn(),
   };
 }
 
@@ -123,7 +126,7 @@ describe('AuthService.login', () => {
       jest.spyOn(passwordUtil, 'comparePassword').mockResolvedValue(true);
       jest.spyOn(tokenUtil, 'generateAccessToken').mockReturnValue(mockAccessToken);
       jest.spyOn(tokenUtil, 'generateRefreshToken').mockReturnValue(mockRefreshToken);
-      mockRepository.storeRefreshToken.mockResolvedValue(undefined);
+      mockRepository.storeRefreshToken.mockResolvedValue({ id: 'mock-id' });
     });
 
     it('verifies the password hash', async () => {

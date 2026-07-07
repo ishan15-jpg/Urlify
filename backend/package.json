@@ -22,6 +22,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
@@ -41,6 +42,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bullmq": "^5.79.2",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ioredis": "^5.11.1",

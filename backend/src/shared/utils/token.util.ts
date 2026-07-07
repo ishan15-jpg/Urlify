@@ -39,3 +39,13 @@ export function verifyAccessToken(token: string): TokenPayload {
   return jwt.verify(token, JWT_SECRET) as TokenPayload;
 }
 
+/**
+ * Verifies a signed JWT refresh token.
+ * 
+ * @param token - The JWT token string to verify.
+ * @returns The decoded TokenPayload.
+ */
+export function verifyRefreshToken(token: string): TokenPayload {
+  return jwt.verify(token, JWT_REFRESH_SECRET) as TokenPayload;
+}
+

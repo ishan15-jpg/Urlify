@@ -83,5 +83,18 @@ export interface IAuthService {
       limit: number;
     };
   }>;
+
+  /**
+   * Updates a user's blocklist status and revokes active refresh tokens if blocklisted.
+   *
+   * @param params - Admin ID, target user ID, blocklisted flag, and optional reason.
+   * @returns The updated User entity.
+   */
+  updateBlocklistStatus?(params: {
+    adminId: string;
+    targetUserId: string;
+    blocklisted: boolean;
+    reason?: string;
+  }): Promise<User>;
 }
 

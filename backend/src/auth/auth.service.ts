@@ -66,6 +66,11 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedError('Incorrect password');
     }
 
+    if (user.isBlacklisted) {
+      logger.warn(`Login failed: user ${user.id} is blocklisted`);
+      throw new ForbiddenError('Your account has been blocklisted');
+    }
+
     const payload = { userId: user.id, email: user.email, role: user.role || 'user' };
     logger.debug(`Creating access token`);
     const accessToken = generateAccessToken(payload);
@@ -414,6 +419,11 @@ export class AuthService implements IAuthService {
       throw new NotFoundError('User', userId);
     }
 
+    if (user.isBlacklisted) {
+      logger.warn(`Refresh failed: User ${userId} is blocklisted`);
+      throw new ForbiddenError('Your account has been blocklisted');
+    }
+
     // 4. Generate new access and refresh tokens
     const tokenPayload = { userId: user.id, email: user.email, role: user.role || 'user' };
     const accessToken = generateAccessToken(tokenPayload);
@@ -471,5 +481,47 @@ export class AuthService implements IAuthService {
       },
     };
   }
+
+  /**
+   * Updates a user's blocklist status and revokes active refresh tokens if blocklisted.
+   *
+   * @param params - Admin ID, target user ID, blocklisted flag, and optional reason.
+   * @returns The updated User entity.
+   */
+  async updateBlocklistStatus(params: {
+    adminId: string;
+    targetUserId: string;
+    blocklisted: boolean;
+    reason?: string;
+  }): Promise<User> {
+    const { adminId, targetUserId, blocklisted, reason } = params;
+    logger.info(`Blocklist status update request for user ${targetUserId} to ${blocklisted} by admin ${adminId}. Reason: ${reason || 'N/A'}`);
+
+    if (adminId === targetUserId) {
+      logger.warn(`Admin ${adminId} attempted to blocklist themselves`);
+      throw new ConflictError('Admin cannot blocklist themselves');
+    }
+
+    const user = await this.authRepository.findById(targetUserId);
+    if (!user) {
+      logger.warn(`Blocklist update failed: User ${targetUserId} not found`);
+      throw new NotFoundError('User', targetUserId);
+    }
+
+    if (user.role === 'admin') {
+      logger.warn(`Admin ${adminId} attempted to blocklist another admin ${targetUserId}`);
+      throw new ConflictError('Admin cannot blocklist another admin');
+    }
+
+    const updatedUser = await this.authRepository.updateBlocklistStatus!(targetUserId, blocklisted);
+
+    if (blocklisted) {
+      logger.info(`Revoking all active refresh tokens for user ${targetUserId}`);
+      await this.authRepository.deleteAllRefreshTokensForUser(targetUserId);
+    }
+
+    return updatedUser;
+  }
 }
+
 

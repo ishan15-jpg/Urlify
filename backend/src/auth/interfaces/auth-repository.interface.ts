@@ -137,6 +137,15 @@ export interface IAuthRepository {
     search?: string;
     status?: 'active' | 'blocklisted' | 'unverified';
   }): Promise<{ users: User[]; totalItems: number }>;
+
+  /**
+   * Updates a user's blocklist status in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param isBlacklisted - The new blocklist status.
+   * @returns The updated User entity.
+   */
+  updateBlocklistStatus?(userId: string, isBlacklisted: boolean): Promise<User>;
 }
 
 

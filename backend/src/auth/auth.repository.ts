@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { IAuthRepository } from './interfaces/auth-repository.interface';
 import { User, EmailVerificationToken, PasswordResetToken } from './auth.entity';
 import { logger } from '../shared/utils/logger';
+import { NotFoundError } from '../shared/errors/not-found.error';
 
 
 export class AuthRepository implements IAuthRepository {
@@ -388,6 +389,31 @@ export class AuthRepository implements IAuthRepository {
     const users = dataResult.rows.map(row => this.toEntity(row));
     
     return { users, totalItems };
+  }
+
+  /**
+   * Updates a user's blocklist status in the database.
+   *
+   * @param userId - The ID of the user.
+   * @param isBlacklisted - The new blocklist status.
+   * @returns The updated User entity.
+   */
+  async updateBlocklistStatus(userId: string, isBlacklisted: boolean): Promise<User> {
+    logger.debug(`Updating blocklist status for user ${userId} to ${isBlacklisted}`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `UPDATE users
+       SET is_blacklisted = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND is_deleted = false
+       RETURNING id, name, email, password_hash, is_email_verified, is_blacklisted,
+                 is_deleted, last_login, created_at, updated_at, role`,
+      [userId, isBlacklisted],
+    );
+
+    if (!result.rows[0]) {
+      logger.warn(`Failed to update blocklist: User ${userId} not found or deleted`);
+      throw new NotFoundError('User', userId);
+    }
+    return this.toEntity(result.rows[0]);
   }
 }
 

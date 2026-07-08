@@ -78,5 +78,15 @@ export const getUsersQuerySchema = z.object({
 
 export type GetUsersQuerySchemaType = z.infer<typeof getUsersQuerySchema>;
 
+export const blocklistUserSchema = z.object({
+  blocklisted: z.boolean({
+    message: 'blocklisted must be a boolean',
+  }),
+  reason: z.string().optional(),
+});
+
+export type BlocklistUserSchemaType = z.infer<typeof blocklistUserSchema>;
+
+
 
 

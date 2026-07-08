@@ -110,6 +110,21 @@ class ValidateRequest {
       next();
     };
   }
+
+  validateBlocklistRequest = (schema: z.ZodType) => {
+    return (req: Request, _res: Response, next: NextFunction) => {
+      logger.debug(`Validating blocklist request`);
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        logger.warn(`Blocklist request failed due to invalid request body`);
+        const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
+        return next(new ValidationError(firstMessage, result.error.flatten));
+      }
+      logger.debug(`Blocklist request validated successfully`);
+      req.body = result.data; // now typed & sanitized
+      next();
+    };
+  }
 }
 
 export default ValidateRequest.getInstance();

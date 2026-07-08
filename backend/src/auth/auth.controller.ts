@@ -5,6 +5,7 @@ import { LoginRequestDto } from './dtos/login-request.dto';
 import { toRegisterResponseDto } from './dtos/register-response.dto';
 import { toUserDto } from './dtos/login-response.dto';
 import { toAdminUserDto } from './dtos/admin-user-response.dto';
+import { toBlocklistResponseDto } from './dtos/blocklist-response.dto';
 import { logger } from '../shared/utils/logger';
 import { UnauthorizedError } from '../shared/errors/unauthorized.error';
 import { ValidationError } from '../shared/errors/validation.error';
@@ -274,6 +275,49 @@ export class AuthController {
           users: users.map(toAdminUserDto),
           pagination,
         },
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * PATCH /api/v1/admin/users/:userId/blocklist
+   *
+   * Updates a user's blocklist status (true/false) and returns the updated status.
+   */
+  updateBlocklistStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('Unauthorized');
+      }
+
+      const adminId = req.user.userId;
+      const targetUserId = req.params.userId as string;
+      const { blocklisted, reason } = req.body;
+
+      logger.info(`Blocklist request received from admin ${adminId} for target user ${targetUserId}`);
+      const updatedUser = await this.authService.updateBlocklistStatus!({
+        adminId,
+        targetUserId,
+        blocklisted,
+        reason,
+      });
+
+      const actionMessage = blocklisted
+        ? 'User has been blocklisted successfully'
+        : 'User blocklist has been lifted successfully';
+
+      logger.info(`Blocklist status successfully updated for user ${targetUserId}`);
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: actionMessage,
+        data: toBlocklistResponseDto(updatedUser),
         meta: {
           requestId: req.headers['x-request-id'] ?? null,
           timestamp: new Date().toISOString(),

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authController } from './auth/auth.module';
 import { authenticate, authorize } from './shared/middlewares/auth.middleware';
 import validate from './shared/middlewares/validate.middleware';
-import { getUsersQuerySchema } from './auth/auth.schema';
+import { getUsersQuerySchema, blocklistUserSchema } from './auth/auth.schema';
 import { logger } from './shared/utils/logger';
 
 /**
@@ -20,3 +20,14 @@ adminRouter.get('/users',
   validate.validateGetUsersQuery(getUsersQuerySchema),
   authController.getUsers
 );
+
+// PATCH /api/v1/admin/users/:userId/blocklist
+// Middleware chain: authenticate → authorize(['admin']) → validate.validateBlocklistRequest(blocklistUserSchema) → authController.updateBlocklistStatus
+adminRouter.patch('/users/:userId/blocklist',
+  (_, __, next) => { logger.info(`Admin PATCH /users/:userId/blocklist request received`); next(); },
+  authenticate,
+  authorize(['admin']),
+  validate.validateBlocklistRequest(blocklistUserSchema),
+  authController.updateBlocklistStatus
+);
+

@@ -1010,15 +1010,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     "expiresAt": "2026-12-31T23:59:59.000Z",
     "analytics": {
       "totalClicks": 482,
-      "clicksLast7Days": [12, 30, 45, 28, 60, 51, 40],
-      "topReferrers": [
-        { "source": "twitter.com", "clicks": 190 },
-        { "source": "direct", "clicks": 150 }
-      ],
-      "topCountries": [
-        { "country": "IN", "clicks": 260 },
-        { "country": "US", "clicks": 102 }
-      ]
+      "clicksLast7Days": [12, 30, 45, 28, 60, 51, 40]
     }
   },
   "meta": {

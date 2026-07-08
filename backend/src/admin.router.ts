@@ -31,3 +31,13 @@ adminRouter.patch('/users/:userId/blocklist',
   authController.updateBlocklistStatus
 );
 
+// DELETE /api/v1/admin/users/:userId
+// Middleware chain: authenticate → authorize(['admin']) → authController.softDeleteUser
+adminRouter.delete('/users/:userId',
+  (_, __, next) => { logger.info(`Admin DELETE /users/:userId request received`); next(); },
+  authenticate,
+  authorize(['admin']),
+  authController.softDeleteUser
+);
+
+

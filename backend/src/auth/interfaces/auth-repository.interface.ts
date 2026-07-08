@@ -146,6 +146,14 @@ export interface IAuthRepository {
    * @returns The updated User entity.
    */
   updateBlocklistStatus?(userId: string, isBlacklisted: boolean): Promise<User>;
+
+  /**
+   * Soft deletes a user account in the database.
+   *
+   * @param userId - The ID of the user.
+   * @returns The updated User entity.
+   */
+  softDeleteUser?(userId: string): Promise<User>;
 }
 
 

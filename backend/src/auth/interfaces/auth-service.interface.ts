@@ -96,5 +96,16 @@ export interface IAuthService {
     blocklisted: boolean;
     reason?: string;
   }): Promise<User>;
+
+  /**
+   * Soft deletes a user account and revokes active refresh tokens.
+   *
+   * @param params - Admin ID and target user ID.
+   * @returns The updated User entity representing the soft-deleted state.
+   */
+  softDeleteUser?(params: {
+    adminId: string;
+    targetUserId: string;
+  }): Promise<User>;
 }
 

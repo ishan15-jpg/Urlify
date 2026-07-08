@@ -6,6 +6,7 @@ import { toRegisterResponseDto } from './dtos/register-response.dto';
 import { toUserDto } from './dtos/login-response.dto';
 import { toAdminUserDto } from './dtos/admin-user-response.dto';
 import { toBlocklistResponseDto } from './dtos/blocklist-response.dto';
+import { toDeleteUserResponseDto } from './dtos/delete-user-response.dto';
 import { logger } from '../shared/utils/logger';
 import { UnauthorizedError } from '../shared/errors/unauthorized.error';
 import { ValidationError } from '../shared/errors/validation.error';
@@ -318,6 +319,42 @@ export class AuthController {
         statusCode: 200,
         message: actionMessage,
         data: toBlocklistResponseDto(updatedUser),
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * DELETE /api/v1/admin/users/:userId
+   *
+   * Soft deletes a user account and revokes active sessions.
+   */
+  softDeleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('Unauthorized');
+      }
+
+      const adminId = req.user.userId;
+      const targetUserId = req.params.userId as string;
+
+      logger.info(`Delete request received from admin ${adminId} for user ${targetUserId}`);
+      const deletedUser = await this.authService.softDeleteUser!({
+        adminId,
+        targetUserId,
+      });
+
+      logger.info(`User ${targetUserId} successfully soft deleted`);
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'User account deleted successfully',
+        data: toDeleteUserResponseDto(deletedUser),
         meta: {
           requestId: req.headers['x-request-id'] ?? null,
           timestamp: new Date().toISOString(),

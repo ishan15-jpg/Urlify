@@ -522,6 +522,44 @@ export class AuthService implements IAuthService {
 
     return updatedUser;
   }
+
+  /**
+   * Soft deletes a user account and revokes active refresh tokens.
+   *
+   * @param params - Admin ID and target user ID.
+   * @returns The updated User entity representing the soft-deleted state.
+   */
+  async softDeleteUser(params: {
+    adminId: string;
+    targetUserId: string;
+  }): Promise<User> {
+    const { adminId, targetUserId } = params;
+    logger.info(`Soft delete request for user ${targetUserId} by admin ${adminId}`);
+
+    if (adminId === targetUserId) {
+      logger.warn(`Admin ${adminId} attempted to delete themselves`);
+      throw new ConflictError('Admin cannot delete themselves');
+    }
+
+    const user = await this.authRepository.findById(targetUserId);
+    if (!user) {
+      logger.warn(`Delete failed: User ${targetUserId} not found`);
+      throw new NotFoundError('User', targetUserId);
+    }
+
+    if (user.role === 'admin') {
+      logger.warn(`Admin ${adminId} attempted to delete another admin ${targetUserId}`);
+      throw new ConflictError('Admin cannot delete another admin');
+    }
+
+    const deletedUser = await this.authRepository.softDeleteUser!(targetUserId);
+
+    // Revoke all active refresh tokens for the deleted user
+    logger.info(`Revoking all active refresh tokens for soft-deleted user ${targetUserId}`);
+    await this.authRepository.deleteAllRefreshTokensForUser(targetUserId);
+
+    return deletedUser;
+  }
 }
 
 

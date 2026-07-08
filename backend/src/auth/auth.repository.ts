@@ -415,6 +415,30 @@ export class AuthRepository implements IAuthRepository {
     }
     return this.toEntity(result.rows[0]);
   }
+
+  /**
+   * Soft deletes a user account in the database.
+   *
+   * @param userId - The ID of the user to soft delete.
+   * @returns The updated User entity representing the soft-deleted state.
+   */
+  async softDeleteUser(userId: string): Promise<User> {
+    logger.debug(`Soft deleting user ${userId}`);
+    const result = await this.db.query<Record<string, unknown>>(
+      `UPDATE users
+       SET is_deleted = true, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND is_deleted = false
+       RETURNING id, name, email, password_hash, is_email_verified, is_blacklisted,
+                 is_deleted, last_login, created_at, updated_at, role`,
+      [userId],
+    );
+
+    if (!result.rows[0]) {
+      logger.warn(`Failed to soft delete: User ${userId} not found or already deleted`);
+      throw new NotFoundError('User', userId);
+    }
+    return this.toEntity(result.rows[0]);
+  }
 }
 
 

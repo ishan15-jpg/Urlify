@@ -48,3 +48,31 @@ export function authorize(roles: string[]) {
     next();
   };
 }
+
+/**
+ * Middleware that optionally authenticates a user. If a valid access token is provided,
+ * decodes and attaches the payload to req.user. If no token is provided, it proceeds
+ * as an unauthenticated request without throwing an error.
+ */
+export function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): void {
+  try {
+    logger.debug(`Extracting access token optionally from request headers`);
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.debug('No access token provided, proceeding as anonymous request');
+      return next();
+    }
+    const token = authHeader.substring(7).trim(); // Extract the token
+    logger.debug(`Access token extracted`);
+    logger.debug(`Verifying access token optionally`);
+    const decoded = verifyAccessToken(token);
+    // Attach decoded user token payload to the request object
+    req.user = decoded;
+    logger.debug(`Access token verified successfully`);
+    next();
+  } catch (error) {
+    logger.warn('Optional authentication failed: Token verification failed', error);
+    next(new UnauthorizedError('Invalid or expired access token'));
+  }
+}
+

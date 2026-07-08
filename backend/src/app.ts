@@ -4,6 +4,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import { errorMiddleware } from './shared/middlewares/error.middleware';
 import { authRouter } from './auth';
+import { adminRouter } from './admin.router';
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,10 @@ app.get('/health', (_, res) => {
 // API v1 — auth module
 app.use('/api/v1/auth', authRouter);
 
+// API v1 — admin module
+app.use('/api/v1/admin', adminRouter);
+
 app.use(errorMiddleware); // must be registered last
+
 
 export default app;

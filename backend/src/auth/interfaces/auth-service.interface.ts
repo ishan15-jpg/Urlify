@@ -62,5 +62,26 @@ export interface IAuthService {
    * @param oldToken - The current raw refresh token.
    */
   refreshSession(oldToken: string): Promise<{ accessToken: string; newRefreshToken: string }>;
+
+  /**
+   * Fetches a paginated list of users and pagination metadata based on query filters.
+   *
+   * @param params - Query parameters.
+   * @returns List of matching user entities and pagination info.
+   */
+  getUsers?(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'active' | 'blocklisted' | 'unverified';
+  }): Promise<{
+    users: User[];
+    pagination: {
+      totalItems: number;
+      currentPage: number;
+      totalPages: number;
+      limit: number;
+    };
+  }>;
 }
 

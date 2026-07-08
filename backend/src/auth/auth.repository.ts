@@ -18,7 +18,7 @@ export class AuthRepository implements IAuthRepository {
     logger.debug(`Database query initiated`);
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT id, name, email, password_hash, is_email_verified, is_blacklisted,
-              is_deleted, last_login, created_at, updated_at
+              is_deleted, last_login, created_at, updated_at, role
        FROM users
        WHERE email = $1 AND is_deleted = false
        LIMIT 1`,
@@ -46,7 +46,7 @@ export class AuthRepository implements IAuthRepository {
       `INSERT INTO users (name, email, password_hash)
        VALUES ($1, $2, $3)
        RETURNING id, name, email, password_hash, is_email_verified, is_blacklisted,
-                 is_deleted, last_login, created_at, updated_at`,
+                 is_deleted, last_login, created_at, updated_at, role`,
       [data.name, data.email, data.passwordHash],
     );
     
@@ -66,6 +66,7 @@ export class AuthRepository implements IAuthRepository {
       lastLogin: row['last_login'] ? new Date(row['last_login'] as string) : null,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
+      role: row['role'] as string,
     };
   }
 
@@ -115,7 +116,7 @@ export class AuthRepository implements IAuthRepository {
     logger.debug(`Database query: findById initiated`);
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT id, name, email, password_hash, is_email_verified, is_blacklisted,
-              is_deleted, last_login, created_at, updated_at
+              is_deleted, last_login, created_at, updated_at, role
        FROM users
        WHERE id = $1 AND is_deleted = false
        LIMIT 1`,
@@ -329,5 +330,65 @@ export class AuthRepository implements IAuthRepository {
       [userId],
     );
   }
+
+  /**
+   * Fetches a paginated list of users and a total count matching query criteria.
+   *
+   * @param params - Search string, status filter, page limit, and current page.
+   * @returns Paginated list of users and total count.
+   */
+  async findAndCount(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'active' | 'blocklisted' | 'unverified';
+  }): Promise<{ users: User[]; totalItems: number }> {
+    logger.debug(`Database query: findAndCount initiated`);
+    
+    const whereClauses: string[] = ['is_deleted = false'];
+    const queryParams: any[] = [];
+    
+    if (params.search) {
+      queryParams.push(`%${params.search}%`);
+      whereClauses.push(`(name ILIKE $${queryParams.length} OR email ILIKE $${queryParams.length})`);
+    }
+    
+    if (params.status) {
+      if (params.status === 'active') {
+        whereClauses.push('is_email_verified = true AND is_blacklisted = false');
+      } else if (params.status === 'blocklisted') {
+        whereClauses.push('is_blacklisted = true');
+      } else if (params.status === 'unverified') {
+        whereClauses.push('is_email_verified = false');
+      }
+    }
+    
+    const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
+    
+    // Get total count
+    const countQuery = `SELECT COUNT(*) FROM users ${whereSql}`;
+    const countResult = await this.db.query<{ count: string }>(countQuery, queryParams);
+    const totalItems = parseInt(countResult.rows[0].count, 10);
+    
+    // Get paginated users
+    const limitIndex = queryParams.length + 1;
+    const offsetIndex = queryParams.length + 2;
+    queryParams.push(params.limit, (params.page - 1) * params.limit);
+    
+    const dataQuery = `
+      SELECT id, name, email, password_hash, is_email_verified, is_blacklisted,
+             is_deleted, last_login, created_at, updated_at, role
+      FROM users
+      ${whereSql}
+      ORDER BY created_at DESC
+      LIMIT $${limitIndex} OFFSET $${offsetIndex}
+    `;
+    
+    const dataResult = await this.db.query<Record<string, unknown>>(dataQuery, queryParams);
+    const users = dataResult.rows.map(row => this.toEntity(row));
+    
+    return { users, totalItems };
+  }
 }
+
 

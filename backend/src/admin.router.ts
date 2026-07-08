@@ -1,0 +1,22 @@
+import { Router } from 'express';
+import { authController } from './auth/auth.module';
+import { authenticate, authorize } from './shared/middlewares/auth.middleware';
+import validate from './shared/middlewares/validate.middleware';
+import { getUsersQuerySchema } from './auth/auth.schema';
+import { logger } from './shared/utils/logger';
+
+/**
+ * Admin router — all paths here are relative to the mount point in app.ts.
+ * The v1/admin prefix is applied at the app level: app.use('/api/v1/admin', adminRouter)
+ */
+export const adminRouter = Router();
+
+// GET /api/v1/admin/users
+// Middleware chain: authenticate → authorize(['admin']) → validate.validateGetUsersQuery(getUsersQuerySchema) → authController.getUsers
+adminRouter.get('/users',
+  (_, __, next) => { logger.info(`Admin GET /users request received`); next(); },
+  authenticate,
+  authorize(['admin']),
+  validate.validateGetUsersQuery(getUsersQuerySchema),
+  authController.getUsers
+);

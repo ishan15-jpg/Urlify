@@ -67,7 +67,7 @@ class ValidateRequest {
       if (!result.success) {
         logger.warn(`Forgot password request failed due to invalid request body`);
         const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
-        return next(new ValidationError(firstMessage, result.error.flatten()));
+        return next(new ValidationError(firstMessage, result.error.flatten));
       }
       logger.debug(`Forgot password request validated successfully`)
       req.body = result.data; // now typed & sanitized
@@ -82,10 +82,31 @@ class ValidateRequest {
       if (!result.success) {
         logger.warn(`Reset password request failed due to invalid request body`);
         const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
-        return next(new ValidationError(firstMessage, result.error.flatten()));
+        return next(new ValidationError(firstMessage, result.error.flatten));
       }
       logger.debug(`Reset password request validated successfully`)
       req.body = result.data; // now typed & sanitized
+      next();
+    };
+  }
+
+  validateGetUsersQuery = (schema: z.ZodType) => {
+    return (req: Request, _res: Response, next: NextFunction) => {
+      logger.debug(`Validating get users query parameters`);
+      const result = schema.safeParse(req.query);
+      if (!result.success) {
+        logger.warn(`Get users request failed due to invalid query parameters`);
+        const firstMessage = result.error.issues[0]?.message || 'Invalid query parameters';
+        return next(new ValidationError(firstMessage, result.error.flatten));
+      }
+      logger.debug(`Get users query parameters validated successfully`);
+      // Redefine req.query to return the validated and coerced parameters
+      Object.defineProperty(req, 'query', {
+        value: result.data,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
       next();
     };
   }

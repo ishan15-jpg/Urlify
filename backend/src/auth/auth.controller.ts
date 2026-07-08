@@ -4,6 +4,7 @@ import { RegisterRequestDto } from './dtos/register-request.dto';
 import { LoginRequestDto } from './dtos/login-request.dto';
 import { toRegisterResponseDto } from './dtos/register-response.dto';
 import { toUserDto } from './dtos/login-response.dto';
+import { toAdminUserDto } from './dtos/admin-user-response.dto';
 import { logger } from '../shared/utils/logger';
 import { UnauthorizedError } from '../shared/errors/unauthorized.error';
 import { ValidationError } from '../shared/errors/validation.error';
@@ -237,6 +238,41 @@ export class AuthController {
         data: {
           accessToken,
           expiresIn: 900, // 15 minutes in seconds
+        },
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * GET /api/v1/admin/users
+   *
+   * Fetches a paginated list of users filtered by query parameters.
+   */
+  getUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      logger.info('Admin users fetch request initiated');
+      const query = req.query as any;
+      const { users, pagination } = await this.authService.getUsers!({
+        page: query.page,
+        limit: query.limit,
+        search: query.search,
+        status: query.status,
+      });
+
+      logger.info('Admin users fetched successfully');
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Users fetched successfully',
+        data: {
+          users: users.map(toAdminUserDto),
+          pagination,
         },
         meta: {
           requestId: req.headers['x-request-id'] ?? null,

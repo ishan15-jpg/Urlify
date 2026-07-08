@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/token.util';
 import { UnauthorizedError } from '../errors/unauthorized.error';
+import { ForbiddenError } from '../errors/forbidden.error';
 import { logger } from '../utils/logger';
 
 /**
@@ -27,4 +28,23 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     logger.warn('Authentication failed: Token verification failed', error);
     next(new UnauthorizedError('Invalid or expired access token'));
   }
+}
+
+/**
+ * Middleware that restricts access to users with specific roles.
+ * Must be registered AFTER the authenticate middleware.
+ */
+export function authorize(roles: string[]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      logger.warn('Authorization failed: No user attached to request');
+      return next(new UnauthorizedError('Missing or invalid access token'));
+    }
+    if (!roles.includes(req.user.role)) {
+      logger.warn(`Authorization failed: User ${req.user.userId} has role ${req.user.role}, required roles: [${roles.join(', ')}]`);
+      return next(new ForbiddenError('You do not have permission to access this resource'));
+    }
+    logger.debug(`User ${req.user.userId} with role ${req.user.role} authorized successfully`);
+    next();
+  };
 }

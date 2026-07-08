@@ -63,4 +63,20 @@ export const resetPasswordSchema = z.object({
 
 export type ResetPasswordSchemaType = z.infer<typeof resetPasswordSchema>;
 
+export const getUsersQuerySchema = z.object({
+  page: z.preprocess(
+    (val) => (val ? parseInt(val as string, 10) : 1),
+    z.number().int().min(1, 'Page must be at least 1').default(1)
+  ),
+  limit: z.preprocess(
+    (val) => (val ? parseInt(val as string, 10) : 20),
+    z.number().int().min(1, 'Limit must be at least 1').max(100, 'Limit cannot exceed 100').default(20)
+  ),
+  search: z.string().optional(),
+  status: z.enum(['active', 'blocklisted', 'unverified']).optional(),
+});
+
+export type GetUsersQuerySchemaType = z.infer<typeof getUsersQuerySchema>;
+
+
 

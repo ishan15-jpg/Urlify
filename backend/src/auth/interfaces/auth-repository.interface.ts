@@ -124,6 +124,19 @@ export interface IAuthRepository {
    * @param userId - The ID of the user.
    */
   deleteAllRefreshTokensForUser(userId: string): Promise<void>;
+
+  /**
+   * Fetches a paginated list of users and a total count matching query criteria.
+   *
+   * @param params - Search string, status filter, page limit, and current page.
+   * @returns Paginated list of users and total count.
+   */
+  findAndCount?(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'active' | 'blocklisted' | 'unverified';
+  }): Promise<{ users: User[]; totalItems: number }>;
 }
 
 

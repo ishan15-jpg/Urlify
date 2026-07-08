@@ -66,7 +66,7 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedError('Incorrect password');
     }
 
-    const payload = { userId: user.id, email: user.email, role: 'user' };
+    const payload = { userId: user.id, email: user.email, role: user.role || 'user' };
     logger.debug(`Creating access token`);
     const accessToken = generateAccessToken(payload);
     logger.debug(`Access token created`);
@@ -415,7 +415,7 @@ export class AuthService implements IAuthService {
     }
 
     // 4. Generate new access and refresh tokens
-    const tokenPayload = { userId: user.id, email: user.email, role: 'user' };
+    const tokenPayload = { userId: user.id, email: user.email, role: user.role || 'user' };
     const accessToken = generateAccessToken(tokenPayload);
     const newRefreshToken = generateRefreshToken(tokenPayload);
     const newRefreshTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
@@ -436,4 +436,40 @@ export class AuthService implements IAuthService {
     logger.info(`Session successfully refreshed for user ${user.id}`);
     return { accessToken, newRefreshToken };
   }
+
+  /**
+   * Fetches a paginated list of users and pagination metadata based on query filters.
+   *
+   * @param params - Query parameters.
+   * @returns List of matching user entities and pagination info.
+   */
+  async getUsers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'active' | 'blocklisted' | 'unverified';
+  }): Promise<{
+    users: User[];
+    pagination: {
+      totalItems: number;
+      currentPage: number;
+      totalPages: number;
+      limit: number;
+    };
+  }> {
+    logger.info(`Fetching paginated users: page=${params.page}, limit=${params.limit}, search=${params.search || ''}, status=${params.status || ''}`);
+    const { users, totalItems } = await this.authRepository.findAndCount!(params);
+    const totalPages = Math.ceil(totalItems / params.limit) || 1;
+    
+    return {
+      users,
+      pagination: {
+        totalItems,
+        currentPage: params.page,
+        totalPages,
+        limit: params.limit,
+      },
+    };
+  }
 }
+

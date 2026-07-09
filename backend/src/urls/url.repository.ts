@@ -72,6 +72,16 @@ export class UrlRepository implements IUrlRepository {
     return this.toEntity(result.rows[0]);
   }
 
+  async incrementClickCount(shortUrl: string): Promise<void> {
+    logger.debug(`Database query: incrementClickCount initiated for shortUrl ${shortUrl}`);
+    await this.db.query(
+      `UPDATE urls
+       SET click_count = click_count + 1, updated_at = CURRENT_TIMESTAMP
+       WHERE short_url = $1 AND is_deleted = false`,
+      [shortUrl],
+    );
+  }
+
   private toEntity(row: Record<string, unknown>): Url {
     return {
       id: String(row['id']),

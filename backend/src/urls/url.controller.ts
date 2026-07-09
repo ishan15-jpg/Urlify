@@ -39,4 +39,18 @@ export class UrlController {
       next(err);
     }
   };
+
+  redirectToOriginalUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { shortCode } = req.params;
+      logger.info(`Redirect request received for shortCode: ${shortCode}`);
+      
+      const originalUrl = await this.urlService.getOriginalUrl(shortCode as string);
+      
+      logger.info(`Redirecting shortCode: ${shortCode} to: ${originalUrl}`);
+      res.redirect(302, originalUrl);
+    } catch (err) {
+      next(err);
+    }
+  };
 }

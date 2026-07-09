@@ -37,4 +37,11 @@ export interface IUrlRepository {
    * @returns The matching Url entity or null.
    */
   findByShortUrl(shortUrl: string): Promise<Url | null>;
+
+  /**
+   * Increments the click count of a URL record by its shortcode.
+   *
+   * @param shortUrl - The shortcode of the record.
+   */
+  incrementClickCount(shortUrl: string): Promise<void>;
 }

@@ -16,4 +16,13 @@ export interface IUrlService {
     shortCode: string;
     shortUrl: string;
   }>;
+
+  /**
+   * Retrieves the original destination URL for a given shortcode.
+   * Leverages caching, locking, and fallback strategies.
+   *
+   * @param shortCode - The unique short URL identifier code.
+   * @returns The destination URL string.
+   */
+  getOriginalUrl(shortCode: string): Promise<string>;
 }

@@ -33,7 +33,7 @@ function makeUrl(overrides: Partial<Url> = {}): Url {
   };
 }
 
-describe('POST /api/v1/shorten', () => {
+describe('POST /api/v1/url/shorten', () => {
   let createPlaceholderSpy: jest.SpyInstance;
   let updateShortUrlSpy: jest.SpyInstance;
   let verifyAccessTokenSpy: jest.SpyInstance;
@@ -52,7 +52,7 @@ describe('POST /api/v1/shorten', () => {
   });
 
   function postShorten(body: unknown, tokenHeader?: string) {
-    const req = request(app).post('/api/v1/shorten');
+    const req = request(app).post('/api/v1/url/shorten');
     if (tokenHeader !== undefined) {
       req.set('Authorization', tokenHeader);
     }
@@ -65,7 +65,7 @@ describe('POST /api/v1/shorten', () => {
       const res = await postShorten({});
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('expected string, received undefined');
+      expect(res.body.message).toContain('originalUrl must be a valid URL');
     });
 
     it('rejects when originalUrl is not a valid URL', async () => {

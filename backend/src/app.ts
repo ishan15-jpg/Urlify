@@ -6,6 +6,7 @@ import { errorMiddleware } from './shared/middlewares/error.middleware';
 import { authRouter } from './auth';
 import { adminRouter } from './admin.router';
 import { urlRouter } from './urls/url.router';
+import { urlController } from './urls/url.module';
 
 const app = express();
 app.use(express.json());
@@ -23,7 +24,19 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/admin', adminRouter);
 
 // API v1 — urls module
-app.use('/api/v1', urlRouter);
+app.use('/api/v1/url', urlRouter);
+
+// Reserved keywords for system routes that should not trigger redirects
+const reservedKeywords = new Set(['admin', 'api', 'health', 'favicon.ico', 'robots.txt']);
+
+// Root short URL redirection route
+app.get('/:shortCode', (req, res, next) => {
+  const { shortCode } = req.params;
+  if (reservedKeywords.has(shortCode)) {
+    return next();
+  }
+  urlController.redirectToOriginalUrl(req, res, next);
+});
 
 app.use(errorMiddleware); // must be registered last
 

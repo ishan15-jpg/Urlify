@@ -1,0 +1,28 @@
+# Build Stage
+FROM node:latest AS build-stage
+
+WORKDIR /app
+
+COPY ./package*.json /app/
+
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
+# Production Stage
+FROM node:alpine
+
+WORKDIR /app
+
+COPY ./package*.json ./
+
+RUN npm ci --omit=dev
+
+ENV NODE_ENV=production
+ENV LOG_LEVEL=info
+
+COPY --from=build-stage /app/dist ./dist
+
+CMD ["npm", "run", "start"]

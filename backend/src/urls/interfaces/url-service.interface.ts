@@ -25,4 +25,16 @@ export interface IUrlService {
    * @returns The destination URL string.
    */
   getOriginalUrl(shortCode: string): Promise<string>;
+
+  /**
+   * Retrieves a paginated list of short URL entities matching parameters for admin.
+   */
+  getShortUrls(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    sortBy?: 'clicks' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    status?: 'active' | 'expired';
+  }): Promise<{ urls: Url[]; totalItems: number }>;
 }

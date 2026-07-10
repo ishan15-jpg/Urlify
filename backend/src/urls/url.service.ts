@@ -231,4 +231,24 @@ export class UrlService implements IUrlService {
       logger.error(`Failed to release lock in background for lockKey: ${lockKey}:`, err);
     }
   }
+
+  async getShortUrls(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    sortBy?: 'clicks' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    status?: 'active' | 'expired';
+  }): Promise<{ urls: Url[]; totalItems: number }> {
+    const offset = (params.page - 1) * params.limit;
+    logger.info(`Fetching short URLs service: page=${params.page}, limit=${params.limit}, offset=${offset}`);
+    return this.urlRepository.findAll({
+      offset,
+      limit: params.limit,
+      search: params.search,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+      status: params.status,
+    });
+  }
 }

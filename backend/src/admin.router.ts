@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { authController } from './auth/auth.module';
+import { urlController } from './urls/url.module';
 import { authenticate, authorize } from './shared/middlewares/auth.middleware';
 import validate from './shared/middlewares/validate.middleware';
 import { getUsersQuerySchema, blocklistUserSchema } from './auth/auth.schema';
+import { getShortUrlsQuerySchema } from './urls/url.schema';
 import { logger } from './shared/utils/logger';
 
 /**
@@ -38,6 +40,16 @@ adminRouter.delete('/users/:userId',
   authenticate,
   authorize(['admin']),
   authController.softDeleteUser
+);
+
+// GET /api/v1/admin/short-urls
+// Middleware chain: authenticate → authorize(['admin']) → validate.validateGetShortUrlsQuery(getShortUrlsQuerySchema) → urlController.getShortUrls
+adminRouter.get('/short-urls',
+  (_, __, next) => { logger.info(`Admin GET /short-urls request received`); next(); },
+  authenticate,
+  authorize(['admin']),
+  validate.validateGetShortUrlsQuery(getShortUrlsQuerySchema),
+  urlController.getShortUrls
 );
 
 

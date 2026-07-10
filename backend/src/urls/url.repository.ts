@@ -82,6 +82,63 @@ export class UrlRepository implements IUrlRepository {
     );
   }
 
+  async findAll(params: {
+    offset: number;
+    limit: number;
+    search?: string;
+    sortBy?: 'clicks' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    status?: 'active' | 'expired';
+  }): Promise<{ urls: Url[]; totalItems: number }> {
+    const conditions: string[] = ['is_deleted = false'];
+    const queryValues: unknown[] = [];
+
+    // Filter by status
+    if (params.status === 'active') {
+      conditions.push('(is_expired = false AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP))');
+    } else if (params.status === 'expired') {
+      conditions.push('(is_expired = true OR (expires_at IS NOT NULL AND expires_at <= CURRENT_TIMESTAMP))');
+    }
+
+    // Filter by search matching shortCode or originalUrl
+    if (params.search) {
+      queryValues.push(`%${params.search}%`);
+      conditions.push(`(short_url ILIKE $${queryValues.length} OR original_url ILIKE $${queryValues.length})`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // 1. Fetch total count
+    const countQuery = `SELECT COUNT(*) as count FROM urls ${whereClause}`;
+    const countResult = await this.db.query<{ count: string }>(countQuery, queryValues);
+    const totalItems = parseInt(countResult.rows[0]?.count || '0', 10);
+
+    // 2. Sorting
+    const sortField = params.sortBy === 'clicks' ? 'click_count' : 'created_at';
+    const direction = params.sortOrder === 'asc' ? 'ASC' : 'DESC';
+    const orderBy = `ORDER BY ${sortField} ${direction}, created_at DESC`;
+
+    // 3. Limit and Offset pagination
+    queryValues.push(params.limit);
+    const limitPlaceholder = `$${queryValues.length}`;
+    queryValues.push(params.offset);
+    const offsetPlaceholder = `$${queryValues.length}`;
+
+    const selectQuery = `
+      SELECT id, user_id, original_url, short_url, is_deleted, is_expired, click_count, expires_at, created_at, updated_at
+      FROM urls
+      ${whereClause}
+      ${orderBy}
+      LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}
+    `;
+
+    logger.debug(`Database query: findAll short URLs. countQuery: ${countQuery}, selectQuery: ${selectQuery}`);
+    const result = await this.db.query<Record<string, unknown>>(selectQuery, queryValues);
+    const urls = result.rows.map((row) => this.toEntity(row));
+
+    return { urls, totalItems };
+  }
+
   private toEntity(row: Record<string, unknown>): Url {
     return {
       id: String(row['id']),

@@ -133,10 +133,31 @@ class ValidateRequest {
       if (!result.success) {
         logger.warn(`Shorten URL request failed due to invalid request body`);
         const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
-        return next(new ValidationError(firstMessage, result.error.flatten));
+        return next(new ValidationError(firstMessage, result.error.flatten()));
       }
       logger.debug(`Shorten URL request validated successfully`);
       req.body = result.data; // now typed & sanitized
+      next();
+    };
+  }
+
+  validateGetShortUrlsQuery = (schema: z.ZodType) => {
+    return (req: Request, _res: Response, next: NextFunction) => {
+      logger.debug(`Validating get short URLs query parameters`);
+      const result = schema.safeParse(req.query);
+      if (!result.success) {
+        logger.warn(`Get short URLs request failed due to invalid query parameters`);
+        const firstMessage = result.error.issues[0]?.message || 'Invalid query parameters';
+        return next(new ValidationError(firstMessage, result.error.flatten()));
+      }
+      logger.debug(`Get short URLs query parameters validated successfully`);
+      // Redefine req.query to return the validated and coerced parameters
+      Object.defineProperty(req, 'query', {
+        value: result.data,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
       next();
     };
   }

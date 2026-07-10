@@ -44,4 +44,16 @@ export interface IUrlRepository {
    * @param shortUrl - The shortcode of the record.
    */
   incrementClickCount(shortUrl: string): Promise<void>;
+
+  /**
+   * Retrieves a paginated list of short URL entities matching parameters.
+   */
+  findAll(params: {
+    offset: number;
+    limit: number;
+    search?: string;
+    sortBy?: 'clicks' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    status?: 'active' | 'expired';
+  }): Promise<{ urls: Url[]; totalItems: number }>;
 }

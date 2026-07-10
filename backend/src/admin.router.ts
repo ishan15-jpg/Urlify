@@ -52,4 +52,13 @@ adminRouter.get('/short-urls',
   urlController.getShortUrls
 );
 
+// GET /api/v1/admin/short-urls/:shortURL
+// Middleware chain: authenticate → authorize(['admin']) → urlController.getShortUrlDetails
+adminRouter.get('/short-urls/:shortURL',
+  (_, __, next) => { logger.info(`Admin GET /short-urls/:shortURL request received`); next(); },
+  authenticate,
+  authorize(['admin']),
+  urlController.getShortUrlDetails
+);
+
 

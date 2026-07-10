@@ -251,4 +251,13 @@ export class UrlService implements IUrlService {
       status: params.status,
     });
   }
+
+  async getShortUrlDetails(shortCode: string): Promise<Url> {
+    logger.info(`Fetching short URL details service for shortCode: ${shortCode}`);
+    const urlRecord = await this.urlRepository.findByShortUrl(shortCode);
+    if (!urlRecord) {
+      throw new NotFoundError('URL', shortCode);
+    }
+    return urlRecord;
+  }
 }

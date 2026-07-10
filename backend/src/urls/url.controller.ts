@@ -104,4 +104,37 @@ export class UrlController {
       next(err);
     }
   };
+
+  getShortUrlDetails = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { shortURL } = req.params as { shortURL: string };
+      logger.info(`Admin get short URL details: shortURL=${shortURL}`);
+      
+      const url = await this.urlService.getShortUrlDetails(shortURL);
+
+      const isActive = !url.isDeleted && !url.isExpired && (!url.expiresAt || url.expiresAt > new Date());
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Short URL details fetched successfully',
+        data: {
+          id: url.id,
+          shortCode: url.shortUrl,
+          originalUrl: url.originalUrl,
+          ownerId: url.userId,
+          clicks: url.clickCount,
+          isActive,
+          createdAt: url.createdAt.toISOString(),
+          expiresAt: url.expiresAt ? url.expiresAt.toISOString() : null,
+        },
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
 }

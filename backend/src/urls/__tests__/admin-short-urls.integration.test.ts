@@ -34,11 +34,13 @@ function makeUrl(overrides: Partial<Url> = {}): Url {
 
 describe('GET /api/v1/admin/short-urls', () => {
   let findAllSpy: jest.SpyInstance;
+  let findByShortUrlSpy: jest.SpyInstance;
   let verifyAccessTokenSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     findAllSpy = jest.spyOn(UrlRepository.prototype, 'findAll');
+    findByShortUrlSpy = jest.spyOn(UrlRepository.prototype, 'findByShortUrl');
     verifyAccessTokenSpy = jest.spyOn(tokenUtil, 'verifyAccessToken');
   });
 
@@ -250,6 +252,76 @@ describe('GET /api/v1/admin/short-urls', () => {
       expect(items[2].isActive).toBe(false); // expired flag
       expect(items[3].isActive).toBe(false); // expired date
       expect(items[4].isActive).toBe(true);  // future expiry date
+    });
+  });
+
+  describe('GET /api/v1/admin/short-urls/:shortURL', () => {
+    function getShortUrlDetails(shortURL: string, tokenHeader?: string) {
+      const req = request(app).get(`/api/v1/admin/short-urls/${shortURL}`);
+      if (tokenHeader !== undefined) {
+        req.set('Authorization', tokenHeader);
+      }
+      return req;
+    }
+
+    it('returns HTTP 401 when Authorization header is missing', async () => {
+      const res = await getShortUrlDetails('sd-prep');
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('returns HTTP 403 when authenticated user is not an admin', async () => {
+      verifyAccessTokenSpy.mockReturnValue({
+        userId: 'user-id',
+        email: 'user@example.com',
+        role: 'user',
+      });
+      
+      const res = await getShortUrlDetails('sd-prep', 'Bearer user-token');
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('returns HTTP 404 when short URL does not exist', async () => {
+      verifyAccessTokenSpy.mockReturnValue({
+        userId: 'admin-id',
+        email: 'admin@example.com',
+        role: 'admin',
+      });
+      findByShortUrlSpy.mockResolvedValue(null);
+
+      const res = await getShortUrlDetails('non-existent', 'Bearer admin-token');
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('URL with id non-existent not found');
+    });
+
+    it('returns HTTP 200 and URL details successfully without click analytics', async () => {
+      verifyAccessTokenSpy.mockReturnValue({
+        userId: 'admin-id',
+        email: 'admin@example.com',
+        role: 'admin',
+      });
+      
+      const targetUrl = makeUrl({ shortUrl: 'sd-prep', clickCount: 100 });
+      findByShortUrlSpy.mockResolvedValue(targetUrl);
+
+      const res = await getShortUrlDetails('sd-prep', 'Bearer admin-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toBe('Short URL details fetched successfully');
+      expect(res.body.data).toEqual({
+        id: '1',
+        shortCode: 'sd-prep',
+        originalUrl: 'https://google.com',
+        ownerId: 'user-uuid',
+        clicks: 100,
+        isActive: true,
+        createdAt: '2026-07-08T12:00:00.000Z',
+        expiresAt: null,
+      });
+      expect(res.body.data.analytics).toBeUndefined();
     });
   });
 });

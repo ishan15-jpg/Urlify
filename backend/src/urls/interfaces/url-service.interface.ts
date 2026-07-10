@@ -37,4 +37,9 @@ export interface IUrlService {
     sortOrder?: 'asc' | 'desc';
     status?: 'active' | 'expired';
   }): Promise<{ urls: Url[]; totalItems: number }>;
+
+  /**
+   * Retrieves detailed URL entity for moderation.
+   */
+  getShortUrlDetails(shortCode: string): Promise<Url>;
 }

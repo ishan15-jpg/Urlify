@@ -5,7 +5,6 @@ import { passwordResetWorker } from './shared/queues/password-reset.worker';
 import { logger } from './shared/utils/logger';
 
 logger.info('Worker Service is starting up...');
-
 /**
  * Handle graceful shutdown of the worker process.
  * Closes the BullMQ worker connection cleanly on process termination signals.

@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   return (
@@ -19,9 +21,9 @@ function Header() {
 
         {/* Center: Brand */}
         <div className="sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-          <span className="text-headline-md font-bold tracking-tight text-primary">
+          <Link to="/" className="text-2xl font-bold tracking-tight text-primary">
             Urlify
-          </span>
+          </Link>
         </div>
 
         {/* Right: Actions */}
@@ -29,7 +31,7 @@ function Header() {
           <button
             className="text-on-surface-variant hover:text-primary cursor-pointer active:scale-95"
             aria-label="Toggle dark mode"
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleDarkMode}
           >
             <span
               className={`material-symbols-outlined inline-block transition-all duration-300 ease-in-out ${
@@ -65,9 +67,9 @@ function Header() {
                   : 'opacity-0 scale-95 pointer-events-none'
               }`}
             >
-              <button className="w-full text-left px-4 py-3 text-body-md text-on-surface hover:bg-surface-container-high rounded-t-lg transition-colors cursor-pointer">
+              <Link to="/account-settings" className="block w-full text-left px-4 py-3 text-body-md text-on-surface hover:bg-surface-container-high rounded-t-lg transition-colors cursor-pointer" onClick={() => setAccountMenuOpen(false)}>
                 Account
-              </button>
+              </Link>
               <button className="w-full text-left px-4 py-3 text-body-md text-error hover:bg-surface-container-high rounded-b-lg transition-colors cursor-pointer">
                 Logout
               </button>
@@ -75,12 +77,13 @@ function Header() {
           </div>
 
           {/* Account button for md+ (no dropdown) */}
-          <button
+          <Link
+            to="/account-settings"
             className="hidden md:inline-flex text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95"
             aria-label="Account"
           >
             <span className="material-symbols-outlined">account_circle</span>
-          </button>
+          </Link>
         </div>
       </div>
     </header>

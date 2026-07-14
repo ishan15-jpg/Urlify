@@ -28,7 +28,7 @@ function Home() {
     <main className="grow pt-32 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full relative">
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto flex flex-col items-center text-center">
-        <h1 className="text-headline-xl-mobile md:text-headline-xl font-bold tracking-[-0.02em] text-on-background mb-4">
+        <h1 className="text-headline-xl font-bold tracking-[-0.02em] text-on-background mb-4">
           Shorten everything.
         </h1>
         <p className="text-body-lg text-on-surface-variant mb-16 max-w-2xl">

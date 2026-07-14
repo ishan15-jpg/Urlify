@@ -6,6 +6,8 @@ import AccountSettings from './pages/AccountSettings/AccountSettings';
 import { ThemeProvider } from './context/ThemeContext';
 import PasswordChange from './pages/PasswordChange/PasswordChange';
 import EmailVerification from './pages/EmailVerification/EmailVerification';
+import Login from './pages/Login/Login';
+import Register from './pages/Register/Register';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
             <Home />
             <Footer />
           </>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/account-settings" element={<>
             <Header />
             <AccountSettings />

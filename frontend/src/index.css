@@ -164,7 +164,7 @@ body {
 
 #root {
   @apply flex flex-col min-h-screen;
-}
+} 
 
 /* ===== Material Symbols icon helper ===== */
 .material-symbols-outlined {

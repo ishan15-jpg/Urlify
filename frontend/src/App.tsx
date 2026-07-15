@@ -10,6 +10,8 @@ import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import PasswordReset from './pages/PasswordReset/PasswordReset';
 import AuthHeader from './components/Header/AuthHeader';
+import CreatedLinks from './pages/CreatedLinks/CreatedLinks';
+
 function App() {
   return (
     <BrowserRouter>
@@ -33,6 +35,11 @@ function App() {
           <Route path="/account-settings" element={<>
             <Header />
             <AccountSettings />
+            <Footer />
+          </>} />
+          <Route path="/links" element={<>
+            <Header />
+            <CreatedLinks />
             <Footer />
           </>} />
           <Route path="/change-password" element={<PasswordChange />} />

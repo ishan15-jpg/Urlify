@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 function Home() {
   const [urlValue, setUrlValue] = useState('');
@@ -28,13 +29,14 @@ function Home() {
     <main className="grow pt-32 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full relative">
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto flex flex-col items-center text-center">
-        <h1 className="text-headline-xl font-bold tracking-[-0.02em] text-on-background mb-4">
-          Shorten everything.
-        </h1>
-        <p className="text-body-lg text-on-surface-variant mb-16 max-w-2xl">
-          The modern standard for URL management. Professional, tech-forward,
-          and built for speed.
-        </p>
+        {/* Header Section */}
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h1 className="text-[32px] leading-[40px] md:text-headline-xl font-bold text-on-surface tracking-tight">Shorten everything.</h1>
+            <p className="text-on-surface-variant text-body-md mt-2">The modern standard for URL management. Professional, tech-forward,
+          and built for speed.</p>
+          </div>
+        </div>
 
         {/* URL Input Area */}
         <div className="w-full max-w-sm sm:max-w-2xl mx-auto relative group">
@@ -83,13 +85,13 @@ function Home() {
 
         {/* Created Links Action */}
         <div className="mt-16">
-          <button className="group flex items-center gap-2 text-label-md tracking-[0.01em] font-medium text-secondary border border-outline-variant px-16 py-6 rounded-full bg-surface-container-low hover:text-primary hover:border-primary hover:bg-surface-container-high transition-all cursor-pointer">
+          <Link to="/links" className="group flex items-center gap-2 text-label-md tracking-[0.01em] font-medium text-secondary border border-outline-variant px-16 py-6 rounded-full bg-surface-container-low hover:text-primary hover:border-primary hover:bg-surface-container-high transition-all cursor-pointer">
             <span className="material-symbols-outlined">history</span>
             <span>Created Links</span>
             <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
               arrow_forward
             </span>
-          </button>
+          </Link>
         </div>
       </section>
     </main>

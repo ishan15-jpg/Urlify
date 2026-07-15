@@ -1,7 +1,15 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function AccountSettings() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const accsessToken = localStorage.getItem('accessToken');
+    if (!accsessToken) navigate('/');
+  }, []);
+
+
   const [fullName, setFullName] = useState('Alex Mitchell');
   const [email, setEmail] = useState('alex.m@example.com');
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -65,30 +73,30 @@ function AccountSettings() {
   const handlePasswordChange = () => {};
 
   return (
-    <>
-      {/* Toast Notification */}
-      {notification && (
-        <div
-          className={`fixed top-20 right-4 md:top-24 md:right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg font-medium text-white transition-opacity duration-300 ${
-            notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-          }`}
-          role="alert"
+  <>
+    {/* Toast Notification */}
+    {notification && (
+      <div
+        className={`fixed top-20 right-4 md:top-24 md:right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg font-medium text-white transition-opacity duration-300 ${
+          notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        }`}
+        role="alert"
+      >
+        <span className="material-symbols-outlined text-[24px]">
+          {notification.type === 'success' ? 'check_circle' : 'error'}
+        </span>
+        <span className="text-body-md">{notification.message}</span>
+        <button 
+          onClick={() => setNotification(null)}
+          className="ml-4 hover:opacity-80 transition-opacity flex items-center justify-center"
+          aria-label="Close notification"
         >
-          <span className="material-symbols-outlined text-[24px]">
-            {notification.type === 'success' ? 'check_circle' : 'error'}
-          </span>
-          <span className="text-body-md">{notification.message}</span>
-          <button 
-            onClick={() => setNotification(null)}
-            className="ml-4 hover:opacity-80 transition-opacity flex items-center justify-center"
-            aria-label="Close notification"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-      )}
+          <span className="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+    )}
 
-      <main className="grow pt-24 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full">
+    <main className="grow pt-24 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full">
       {/* Breadcrumbs */}
       <nav
         className="flex items-center gap-2 mb-8 text-label-md"
@@ -96,20 +104,20 @@ function AccountSettings() {
       >
         <Link
           to="/"
-          className="text-primary hover:underline transition-colors"
+          className="text-primary-container hover:underline font-semibold"
         >
           Home
         </Link>
-        <span className="text-outline">/</span>
-        <span className="text-on-surface font-semibold">Account Settings</span>
+        <span className="text-outline-variant">/</span>
+        <span className="text-on-surface font-bold">Account Settings</span>
       </nav>
 
       {/* Page Heading */}
       <div className="mb-8">
-        <h1 className="text-headline-xl font-bold text-on-surface mb-2">
+        <h1 className="text-[32px] leading-[40px] md:text-headline-xl font-bold text-on-surface tracking-tight">
           Account Settings
         </h1>
-        <p className="text-body-md text-on-surface-variant">
+        <p className="text-on-surface-variant text-body-md mt-2">
           Manage your profile information and security preferences.
         </p>
       </div>
@@ -265,8 +273,7 @@ function AccountSettings() {
         )}
       </div>
     </main>
-</>
-  );
+  </>);
 }
 
 export default AccountSettings;

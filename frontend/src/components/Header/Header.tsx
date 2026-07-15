@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 function Header() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, _] = useState(false);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface border-b border-outline-variant">

@@ -141,7 +141,7 @@ function AccountSettings() {
 
         <form className="space-y-8 max-w-2xl" onSubmit={handleSubmit}>
           {/* Full Name Field */}
-          <div className="space-y-1">
+          <div className="space-y-1 w-full">
             <label
               htmlFor="fullName"
               className="text-label-md text-on-surface-variant block font-medium"
@@ -166,12 +166,24 @@ function AccountSettings() {
           </div>
 
           {/* Email Field */}
-          <div className="space-y-1">
+          <div className="space-y-1 w-full">
             <label
               htmlFor="email"
               className="text-label-md text-on-surface-variant block font-medium"
             >
-              Email Address
+              <div
+              className='flex items-center justify-between'
+              >
+                Email
+                {!isEmailVerified && (
+                  <span className={`flex items-center gap-1 text-error text-label-sm font-semibold ${isEditing ? 'hidden' : ''}`}>
+                    <span className="material-symbols-outlined text-[16px]">
+                      info
+                    </span>
+                    Unverified
+                  </span>
+                )}
+              </div>
             </label>
             <div className="relative transition-transform duration-200 focus-within:scale-[1.01]">
               <input
@@ -181,22 +193,13 @@ function AccountSettings() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 readOnly={!isEditing}
-                className={`w-full py-4 rounded-lg border text-body-md text-on-surface placeholder:text-outline transition-all ${
-                  !isEmailVerified ? 'pr-32' : ''
+                className={`w-full py-4 rounded-lg border text-body-md text-on-surface placeholder:text-outline transition-all 
                 } ${
                   isEditing
                     ? 'px-4 border-outline-variant bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary'
                     : 'border-transparent bg-transparent cursor-default focus:outline-none'
                 }`}
               />
-              {!isEmailVerified && (
-                <span className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-error text-label-sm font-semibold ${isEditing ? 'hidden' : ''}`}>
-                  <span className="material-symbols-outlined text-[16px]">
-                    info
-                  </span>
-                  Unverified
-                </span>
-              )}
             </div>
           </div>
 

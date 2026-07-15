@@ -8,6 +8,7 @@ import PasswordChange from './pages/PasswordChange/PasswordChange';
 import EmailVerification from './pages/EmailVerification/EmailVerification';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
+import PasswordReset from './pages/PasswordReset/PasswordReset';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           </>} />
           <Route path="/change-password" element={<PasswordChange />} />
           <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/reset-password" element={<PasswordReset />} />
         </Routes>
       </ThemeProvider>
     </BrowserRouter>

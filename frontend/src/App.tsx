@@ -9,7 +9,7 @@ import EmailVerification from './pages/EmailVerification/EmailVerification';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import PasswordReset from './pages/PasswordReset/PasswordReset';
-
+import AuthHeader from './components/Header/AuthHeader';
 function App() {
   return (
     <BrowserRouter>
@@ -20,8 +20,16 @@ function App() {
             <Home />
             <Footer />
           </>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<>
+            <AuthHeader />
+            <Login />
+            <Footer />
+          </>} />
+          <Route path="/register" element={<>
+            <AuthHeader />
+            <Register />
+            <Footer />
+          </>} />
           <Route path="/account-settings" element={<>
             <Header />
             <AccountSettings />

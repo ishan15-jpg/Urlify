@@ -9,7 +9,7 @@ function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface border-b border-outline-variant">
-      <div className="flex items-center h-16 w-full max-w-[var(--spacing-container-max)] mx-auto px-[var(--spacing-gutter)] relative">
+      <section className="flex items-center h-16 w-full max-w-[var(--spacing-container-max)] mx-auto px-[var(--spacing-gutter)] relative">
         {/* Center: Brand */}
         <div className="sm:absolute sm:left-0 md:absolute md:left-1/2 md:-translate-x-1/2">
           <Link to="/" className="text-2xl font-bold tracking-tight text-primary">
@@ -92,7 +92,7 @@ function Header() {
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </header>
   );
 }

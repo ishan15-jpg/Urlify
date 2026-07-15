@@ -1,27 +1,27 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { Link } from 'react-router-dom';
 
-function PasswordChange() {
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [isChanging, setIsChanging] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+function PasswordResetForm(){
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsChanging(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsChanging(false);
-      setIsSuccess(true);
-    }, 1500);
-  };
+    const handleReset = (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsResetting(true);
+        
+        // Simulate API call
+        setTimeout(() => {
+        setIsResetting(false);
+        setIsSuccess(true);
+        }, 1500);
+    };
 
-  return (
-    <div className="bg-background text-on-background min-h-screen flex flex-col">
+    return (
+        <div className="bg-background text-on-background min-h-screen flex flex-col">
       {/* Top Bar (Minimal Branding for Transactional Flows) */}
       <header className="bg-surface border-b border-outline-variant h-16 w-full px-[var(--spacing-gutter)] flex items-center sticky top-0 z-50 justify-center">
         <div className="flex items-center gap-2">
@@ -31,56 +31,21 @@ function PasswordChange() {
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center justify-center px-[var(--spacing-gutter)] py-16 relative overflow-hidden">
+      <main className="flex-grow flex items-center justify-center px-[var(--spacing-gutter)] py-16 relative overflow-hidden">
         {/* Background Atmospheric Element */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-fixed blur-[120px] rounded-full"></div>
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary-fixed blur-[100px] rounded-full"></div>
         </div>
         
-        {/* Breadcrumbs */}
-        <nav className="z-10 w-full max-w-[480px] mb-8">
-          <ol className="flex items-center gap-2 text-label-md">
-            <li><Link className="text-primary hover:underline font-semibold" to="/account-settings">Account Settings</Link></li>
-            <li className="text-outline-variant">/</li>
-            <li className="text-on-surface font-bold">Change Password</li>
-          </ol>
-        </nav>
-
         <div className="z-10 w-full max-w-[480px]">
           <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm">
             <div className="mb-8">
-              <h1 className="text-headline-lg font-bold text-on-surface mb-2">Change Password</h1>
-              <p className="text-body-md text-on-surface-variant">Update your password to keep your account secure.</p>
+              <h1 className="text-headline-lg font-bold text-on-surface mb-2">Set New Password</h1>
+              <p className="text-body-md text-on-surface-variant">Ensure your account is secure with a strong, unique password.</p>
             </div>
             
-            <form className="space-y-6" onSubmit={handleChange}>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="block text-label-md font-semibold text-on-surface-variant" htmlFor="old-password">Old Password</label>
-                  <Link className="text-primary text-label-sm hover:underline font-semibold" to="/reset-password">Forgot Password?</Link>
-                </div>
-                <div className="relative">
-                  <input 
-                    className="w-full bg-surface-container border border-outline-variant rounded-lg px-4 py-4 text-body-md focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none" 
-                    id="old-password" 
-                    placeholder="Enter current password" 
-                    required 
-                    type={showOldPassword ? "text" : "password"}
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                  />
-                  <button 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary flex items-center justify-center cursor-pointer" 
-                    onClick={() => setShowOldPassword(!showOldPassword)} 
-                    type="button"
-                    aria-label="Toggle old password visibility"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">{showOldPassword ? 'visibility_off' : 'visibility'}</span>
-                  </button>
-                </div>
-              </div>
-              
+            <form className="space-y-6" onSubmit={handleReset}>
               <div className="space-y-2">
                 <label className="block text-label-md font-semibold text-on-surface-variant" htmlFor="new-password">New Password</label>
                 <div className="relative">
@@ -104,31 +69,54 @@ function PasswordChange() {
                 </div>
               </div>
               
+              <div className="space-y-2">
+                <label className="block text-label-md font-semibold text-on-surface-variant" htmlFor="confirm-password">Confirm New Password</label>
+                <div className="relative">
+                  <input 
+                    className="w-full bg-surface-container border border-outline-variant rounded-lg px-4 py-4 text-body-md focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none" 
+                    id="confirm-password" 
+                    placeholder="Repeat password" 
+                    required 
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <button 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary flex items-center justify-center cursor-pointer" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    type="button"
+                    aria-label="Toggle confirm password visibility"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{showConfirmPassword ? 'visibility_off' : 'visibility'}</span>
+                  </button>
+                </div>
+              </div>
+              
               <div className="pt-4">
                 <button 
                   className={`w-full text-label-md font-bold py-4 rounded-lg hover:brightness-110 active:scale-[0.98] transition-all flex justify-center items-center gap-2 ${
                     isSuccess ? 'bg-on-tertiary-fixed-variant text-white' : 'bg-primary-container text-on-primary-container'
                   }`} 
                   type="submit"
-                  disabled={isChanging || isSuccess}
+                  disabled={isResetting || isSuccess}
                 >
-                  {isChanging ? (
+                  {isResetting ? (
                     <>
-                      <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span> Updating...
+                      <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span> Resetting...
                     </>
                   ) : isSuccess ? (
                     <>
-                      <span className="material-symbols-outlined text-[20px]">check</span> Password Changed
+                      <span className="material-symbols-outlined text-[20px]">check</span> Password Updated
                     </>
                   ) : (
-                    'Change Password'
+                    'Reset Password'
                   )}
                 </button>
                 
                 {isSuccess && (
                   <div className="mt-6 text-center animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Link to="/account-settings" className="inline-flex items-center gap-1 text-label-md font-bold text-primary hover:underline">
-                      Return to Account Settings
+                    <Link to="/login" className="inline-flex items-center gap-1 text-label-md font-bold text-primary hover:underline">
+                      Return to Login
                       <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </Link>
                   </div>
@@ -154,7 +142,7 @@ function PasswordChange() {
         </div>
       </footer>
     </div>
-  );
+    )
 }
 
-export default PasswordChange;
+export default PasswordResetForm;

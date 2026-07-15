@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../store/ThemeContext';
 
 function Header() {
   const { isDarkMode, toggleDarkMode } = useTheme();
@@ -25,9 +25,8 @@ function Header() {
             onClick={toggleDarkMode}
           >
             <span
-              className={`material-symbols-outlined inline-block transition-all duration-300 ease-in-out ${
-                isDarkMode ? 'rotate-180 scale-110' : 'rotate-0 scale-100'
-              }`}
+              className={`material-symbols-outlined inline-block transition-all duration-300 ease-in-out ${isDarkMode ? 'rotate-180 scale-110' : 'rotate-0 scale-100'
+                }`}
             >
               {isDarkMode ? 'light_mode' : 'dark_mode'}
             </span>
@@ -56,11 +55,10 @@ function Header() {
 
             {/* Dropdown menu */}
             <div
-              className={`absolute right-0 top-[100%] pt-2 w-44 z-50 origin-top-right transition-all duration-200 ease-out md:group-hover:opacity-100 md:group-hover:scale-100 md:group-hover:pointer-events-auto ${
-                accountMenuOpen
+              className={`absolute right-0 top-[100%] pt-2 w-44 z-50 origin-top-right transition-all duration-200 ease-out md:group-hover:opacity-100 md:group-hover:scale-100 md:group-hover:pointer-events-auto ${accountMenuOpen
                   ? 'opacity-100 scale-100 pointer-events-auto'
                   : 'opacity-0 scale-95 pointer-events-none md:opacity-0 md:scale-95 md:pointer-events-none'
-              }`}
+                }`}
             >
               <div className="bg-surface-container-low border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col">
                 {isAuthenticated ? (

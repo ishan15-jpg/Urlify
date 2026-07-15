@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 function CreatedLinks() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, _] = useState(true);
 
   // Mock data
   const mockLinks = [

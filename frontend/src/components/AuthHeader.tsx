@@ -1,4 +1,4 @@
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../store/ThemeContext";
 import { Link } from "react-router-dom";
 
 function AuthHeader(){

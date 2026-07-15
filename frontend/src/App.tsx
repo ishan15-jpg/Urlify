@@ -1,16 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Header from './components/Header/Header';
-import Footer from './components/Footer/Footer';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import Home from './pages/Home/Home';
-import AccountSettings from './pages/AccountSettings/AccountSettings';
-import { ThemeProvider } from './context/ThemeContext';
-import PasswordChange from './pages/PasswordChange/PasswordChange';
-import EmailVerification from './pages/EmailVerification/EmailVerification';
-import Login from './pages/Login/Login';
-import Register from './pages/Register/Register';
-import PasswordReset from './pages/PasswordReset/PasswordReset';
-import AuthHeader from './components/Header/AuthHeader';
-import CreatedLinks from './pages/CreatedLinks/CreatedLinks';
+import AccountSettings from './features/account/components/AccountSettings';
+import { ThemeProvider } from './store/ThemeContext';
+import PasswordChange from './features/auth/components/PasswordChange';
+import EmailVerification from './features/auth/components/EmailVerification';
+import Login from './features/auth/components/Login';
+import Register from './features/auth/components/Register';
+import PasswordReset from './features/auth/components/PasswordReset';
+import AuthHeader from './components/AuthHeader';
+import CreatedLinks from './features/links/components/CreatedLinks';
 
 function App() {
   return (

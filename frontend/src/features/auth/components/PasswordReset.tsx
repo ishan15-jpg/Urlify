@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import PasswordResetForm from '../../components/PasswordResetForm/PasswordResetForm';
+import PasswordResetForm from './PasswordResetForm';
 import { useSearchParams, Navigate } from 'react-router-dom';
 
 function PasswordReset() {
@@ -9,15 +9,15 @@ function PasswordReset() {
     const token = searchParams.get('token');
 
     useEffect(() => {
-        if(!token){
+        if (!token) {
             setStatus('invalid');
             return;
         }
     }, [token]);
-    
-    if(status === 'invalid') return <Navigate to={"/login"} replace />;
 
-  return <PasswordResetForm />;
+    if (status === 'invalid') return <Navigate to={"/login"} replace />;
+
+    return <PasswordResetForm />;
 }
 
 export default PasswordReset;

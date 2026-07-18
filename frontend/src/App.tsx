@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home/Home';
@@ -12,10 +14,14 @@ import PasswordReset from './features/auth/components/PasswordReset';
 import AuthHeader from './components/AuthHeader';
 import CreatedLinks from './features/links/components/CreatedLinks';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<>
             <Header />
@@ -47,7 +53,8 @@ function App() {
           <Route path="/reset-password" element={<PasswordReset />} />
         </Routes>
       </ThemeProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

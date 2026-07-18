@@ -7,8 +7,13 @@ import { authRouter } from './auth';
 import { adminRouter } from './admin.router';
 import { urlRouter } from './urls/url.router';
 import { urlController } from './urls/url.module';
+import cors from 'cors';
 
 const app = express();
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 

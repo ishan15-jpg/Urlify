@@ -16,5 +16,8 @@
     "types": ["jest", "node"]
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules"],
+  "ts-node": {
+    "files": true
+  }
 }

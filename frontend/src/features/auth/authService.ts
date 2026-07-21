@@ -1,5 +1,7 @@
-import authRepository, { type RegisterPayload, type LoginPayload } from './authRepository';
+import type { IAuthRepository } from './interfaces/authRepositoryInterface';
+import type { RegisterPayload, LoginPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
+import type { IAuthService } from './interfaces/authServiceInterface';
 
 export interface FieldErrors {
   name?: string;
@@ -8,7 +10,12 @@ export interface FieldErrors {
   confirmPassword?: string;
 }
 
-export class AuthService {
+export default class AuthService implements IAuthService {
+  private authRepository: IAuthRepository;
+
+  constructor(authRepository: IAuthRepository){
+    this.authRepository = authRepository;
+  }
   /**
    * Validates registration data and calls the repository.
    * Throws an error containing field-specific errors if validation fails.
@@ -46,7 +53,7 @@ export class AuthService {
     }
 
     // If valid, call the repository
-    return authRepository.register({
+    return this.authRepository.register({
       name: payload.name,
       email: payload.email,
       password: payload.password
@@ -71,15 +78,13 @@ export class AuthService {
       throw { name: 'ValidationError', fieldErrors: errors };
     }
 
-    return authRepository.login({
+    return this.authRepository.login({
       email: payload.email,
       password: payload.password
     });
   }
 
   public async logout(): Promise<any> {
-    return authRepository.logout();
+    return this.authRepository.logout();
   }
-}
-
-export default new AuthService();
+};

@@ -2,18 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useMutation } from '@tanstack/react-query';
-import authService, { type FieldErrors } from '../authService';
+import { type FieldErrors } from '../authService';
+import { authService } from '../authModule';
 
 export const useRegister = () => {
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
-  
+
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -48,7 +49,7 @@ export const useRegister = () => {
 
     if (type !== 'checkbox') {
       setFormData(prev => ({ ...prev, [fieldName]: value }));
-      
+
       // Clear error for the specific field when user starts typing again
       if (fieldErrors[fieldName as keyof FieldErrors]) {
         setFieldErrors(prev => ({ ...prev, [fieldName]: undefined }));

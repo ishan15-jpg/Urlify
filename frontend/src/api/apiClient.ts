@@ -8,6 +8,17 @@ export interface HttpRequestConfig {
 }
 
 class ApiClient {
+  private static instance: ApiClient;
+
+  private constructor(){}
+
+  public static getInstance(): ApiClient {
+    if (!ApiClient.instance) {
+      ApiClient.instance = new ApiClient();
+    }
+    return ApiClient.instance;
+  }
+
   public async get<T>(url: string, config?: HttpRequestConfig): Promise<T> {
     const response = await axiosInstance.get<T>(url, config);
     return response.data;
@@ -35,5 +46,5 @@ class ApiClient {
 }
 
 // Export a singleton instance of the abstract ApiClient
-const apiClient = new ApiClient();
+const apiClient = ApiClient.getInstance();
 export default apiClient;

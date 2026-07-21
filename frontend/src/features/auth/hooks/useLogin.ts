@@ -2,7 +2,8 @@ import { useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useMutation } from '@tanstack/react-query';
-import authService, { type FieldErrors } from '../authService';
+import type { FieldErrors } from '../authService';
+import { authService } from '../authModule';
 import STORAGE_KEYS from '../../../constants/storageKeys';
 import { useAuthentication } from '../../../store/AuthenticationContext';
 
@@ -55,7 +56,7 @@ export const useLogin = () => {
     if (id === 'login-password') fieldName = 'password';
 
     setFormData(prev => ({ ...prev, [fieldName]: value }));
-    
+
     // Clear error for the specific field when user starts typing again
     if (fieldErrors[fieldName as keyof FieldErrors]) {
       setFieldErrors(prev => ({ ...prev, [fieldName]: undefined }));

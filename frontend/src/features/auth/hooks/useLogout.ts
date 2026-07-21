@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuthentication } from "../../../store/AuthenticationContext";
 import { useMutation } from "@tanstack/react-query";
-import authService from "../authService";
+import {authService} from "../authModule";
 import toast from "react-hot-toast";
 import STORAGE_KEYS from "../../../constants/storageKeys";
 

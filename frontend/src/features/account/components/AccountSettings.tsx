@@ -1,15 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 function AccountSettings() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const accsessToken = localStorage.getItem('accessToken');
-    if (!accsessToken) navigate('/');
-  }, []);
-
-
   const [fullName, setFullName] = useState('Alex Mitchell');
   const [email, setEmail] = useState('alex.m@example.com');
   const [isEmailVerified, setIsEmailVerified] = useState(false);

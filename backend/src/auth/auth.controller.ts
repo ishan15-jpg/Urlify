@@ -252,6 +252,48 @@ export class AuthController {
   };
 
   /**
+   * POST /api/v1/auth/logout
+   *
+   * Logs out the user by blocklisting the access token and revoking the refresh token.
+   * Clears the refresh token cookie.
+   */
+  logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user || !req.user.exp) {
+        logger.warn(`Logout failed: Missing user or token expiration in request`);
+        throw new UnauthorizedError('Unauthorized');
+      }
+
+      logger.info(`Logout request initiated for user ${req.user.userId}`);
+      const accessToken = req.headers.authorization!.substring(7).trim();
+      const refreshToken = req.cookies?.refreshToken;
+
+      await this.authService.logout(req.user.userId, accessToken, req.user.exp, refreshToken);
+
+      // Clear refresh token cookie
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+      });
+
+      logger.info(`User ${req.user.userId} logged out successfully`);
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Logged out successfully',
+        data: null,
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
    * GET /api/v1/admin/users
    *
    * Fetches a paginated list of users filtered by query parameters.

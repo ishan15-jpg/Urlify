@@ -107,5 +107,15 @@ export interface IAuthService {
     adminId: string;
     targetUserId: string;
   }): Promise<User>;
+
+  /**
+   * Logs out a user by blocklisting their access token and revoking their refresh token.
+   *
+   * @param userId - The ID of the user.
+   * @param accessToken - The current access token to blocklist.
+   * @param exp - The expiration timestamp of the access token.
+   * @param refreshToken - The optional refresh token to revoke.
+   */
+  logout(userId: string, accessToken: string, exp: number, refreshToken?: string): Promise<void>;
 }
 

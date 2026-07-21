@@ -3,12 +3,13 @@ import { verifyAccessToken } from '../utils/token.util';
 import { UnauthorizedError } from '../errors/unauthorized.error';
 import { ForbiddenError } from '../errors/forbidden.error';
 import { logger } from '../utils/logger';
+import { redisClient } from '../config/redis.config';
 
 /**
  * Middleware that lets only authenticated users with a valid access token
  * access the route. Decodes the token and attaches the payload to req.user.
  */
-export function authenticate(req: Request, _res: Response, next: NextFunction): void {
+export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     logger.debug(`Extracting access token from request headers`);
     const authHeader = req.headers.authorization;
@@ -18,6 +19,15 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     }
     const token = authHeader.substring(7).trim(); // Extract the token
     logger.debug(`Access token extracted`);
+
+    // Check Redis blocklist
+    logger.debug(`Checking if access token is blocklisted`);
+    const isBlacklisted = await redisClient.get(`blacklisted_access_token:${token}`);
+    if (isBlacklisted) {
+      logger.warn('Authentication failed: Access token is blocklisted');
+      return next(new UnauthorizedError('Invalid or expired access token'));
+    }
+
     logger.debug(`Verifying access token`);
     const decoded = verifyAccessToken(token);
     // Attach decoded user token payload to the request object
@@ -54,7 +64,7 @@ export function authorize(roles: string[]) {
  * decodes and attaches the payload to req.user. If no token is provided, it proceeds
  * as an unauthenticated request without throwing an error.
  */
-export function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): void {
+export async function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     logger.debug(`Extracting access token optionally from request headers`);
     const authHeader = req.headers.authorization;
@@ -64,6 +74,15 @@ export function optionalAuthenticate(req: Request, _res: Response, next: NextFun
     }
     const token = authHeader.substring(7).trim(); // Extract the token
     logger.debug(`Access token extracted`);
+
+    // Check Redis blocklist
+    logger.debug(`Checking if access token is blocklisted optionally`);
+    const isBlacklisted = await redisClient.get(`blacklisted_access_token:${token}`);
+    if (isBlacklisted) {
+      logger.debug('Optional authentication failed: Access token is blocklisted');
+      return next(); // Proceed as anonymous request if blocklisted
+    }
+
     logger.debug(`Verifying access token optionally`);
     const decoded = verifyAccessToken(token);
     // Attach decoded user token payload to the request object

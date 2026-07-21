@@ -560,6 +560,43 @@ export class AuthService implements IAuthService {
 
     return deletedUser;
   }
+
+  /**
+   * Logs out a user by blocklisting their access token and revoking their refresh token.
+   */
+  async logout(userId: string, accessToken: string, exp: number, refreshToken?: string): Promise<void> {
+    logger.info(`Logout process initiated for user ${userId}`);
+
+    // Calculate remaining TTL for the access token in seconds
+    const currentUnixTime = Math.floor(Date.now() / 1000);
+    const ttl = exp - currentUnixTime;
+    
+    if (ttl > 0) {
+      logger.debug(`Adding access token to blocklist in Redis with TTL ${ttl}s`);
+      const redisKey = `blacklisted_access_token:${accessToken}`;
+      await redisClient.set(redisKey, 'revoked', 'EX', ttl);
+    }
+
+    if (refreshToken) {
+      logger.debug(`Revoking refresh token for user ${userId}`);
+      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      const refreshRedisKey = `refresh_token:${tokenHash}`;
+      
+      // Delete from Redis cache
+      await redisClient.del(refreshRedisKey);
+
+      // Look up the token in the database and revoke it if found
+      const tokenRecord = await this.authRepository.findRefreshTokenByHash(tokenHash);
+      if (tokenRecord) {
+        await this.authRepository.revokeRefreshToken(tokenRecord.id);
+        logger.debug(`Refresh token revoked in database for user ${userId}`);
+      } else {
+        logger.warn(`Refresh token not found in database during logout for user ${userId}`);
+      }
+    }
+
+    logger.info(`Logout process completed successfully for user ${userId}`);
+  }
 }
 
 

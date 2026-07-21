@@ -66,4 +66,12 @@ authRouter.post('/refresh',
     authController.refresh
 );
 
+// POST /api/v1/auth/logout
+// Middleware chain: authenticate → authController.logout
+authRouter.post('/logout',
+    (_, __, next) => { logger.info(`Logout request received`); next(); },
+    authenticate,
+    authController.logout
+);
+
 

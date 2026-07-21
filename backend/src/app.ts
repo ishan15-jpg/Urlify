@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { errorMiddleware } from './shared/middlewares/error.middleware';
 import { authRouter } from './auth';
 import { adminRouter } from './admin.router';
+import { usersRouter } from './users';
 import { urlRouter } from './urls/url.router';
 import { urlController } from './urls/url.module';
 import cors from 'cors';
@@ -24,6 +25,9 @@ app.get('/health', (_, res) => {
 
 // API v1 — auth module
 app.use('/api/v1/auth', authRouter);
+
+// API v1 — users module
+app.use('/api/v1/users', usersRouter);
 
 // API v1 — admin module
 app.use('/api/v1/admin', adminRouter);

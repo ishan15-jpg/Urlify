@@ -67,24 +67,28 @@ All responses — success or error — follow this shape so clients can parse pr
 **Section 1 — Authentication**
 1. [POST /auth/login](#1-post-authlogin)
 2. [POST /auth/register](#2-post-authregister)
-3. [POST /auth/email-verification-link](#3-post-authemail-verification-link)
-4. [POST /auth/verify-email](#4-post-authverify-email)
-5. [POST /auth/forgot-password](#5-post-authforgot-password)
-6. [POST /auth/reset-password](#6-post-authreset-password)
-7. [POST /auth/refresh](#7-post-authrefresh)
-8. [GET /admin/users](#8-get-adminusers)
-9. [PATCH /admin/users/:userId/blocklist](#9-patch-adminusersuseridblocklist)
-10. [DELETE /admin/users/:userId](#10-delete-adminusersuserid)
+3. [POST /auth/logout](#3-post-authlogout)
+4. [POST /auth/email-verification-link](#4-post-authemail-verification-link)
+5. [POST /auth/verify-email](#5-post-authverify-email)
+6. [POST /auth/forgot-password](#6-post-authforgot-password)
+7. [POST /auth/reset-password](#7-post-authreset-password)
+8. [POST /auth/refresh](#8-post-authrefresh)
 
-**Section 2 — URL Shortening**
-11. [POST /shorten](#11-post-shorten)
-12. [GET /:shortURL](#12-get-shorturl)
-13. [GET /admin/short-urls](#13-get-adminshort-urls)
-14. [GET /admin/short-urls/:shortURL](#14-get-adminshort-urlsshorturl)
+**Section 2 — Users**
+9. [GET /users/me](#9-get-usersme)
+10. [GET /admin/users](#10-get-adminusers)
+11. [PATCH /admin/users/:userId/blocklist](#11-patch-adminusersuseridblocklist)
+12. [DELETE /admin/users/:userId](#12-delete-adminusersuserid)
+
+**Section 3 — URL Shortening**
+13. [POST /shorten](#13-post-shorten)
+14. [GET /:shortURL](#14-get-shorturl)
+15. [GET /admin/short-urls](#15-get-adminshort-urls)
+16. [GET /admin/short-urls/:shortURL](#16-get-adminshort-urlsshorturl)
 
 **Appendix**
-15. [Common Error Codes](#common-error-codes)
-16. [Rate Limiting](#rate-limiting)
+17. [Common Error Codes](#common-error-codes)
+18. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -616,7 +620,70 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 
 ---
 
-## 9. GET /admin/users
+# Section 2: Users
+
+## 9. GET /users/me
+
+Retrieves the profile data of the currently authenticated user.
+
+**Auth required:** Yes — `Authorization: Bearer <access_token>`
+
+### Request
+
+```http
+GET /api/v1/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+_No request body required._
+
+### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "User profile fetched successfully",
+  "data": {
+    "user": {
+      "id": "f3a1c2e4-9b2d-4a3e-8c1a-2d4e6f8a9b0c",
+      "email": "ishan@example.com",
+      "name": "Ishan Sharma",
+      "role": "USER",
+      "isEmailVerified": true,
+      "createdAt": "2026-01-15T08:30:00.000Z"
+    }
+  },
+  "meta": {
+    "requestId": "req_88ab47461b104f20",
+    "timestamp": "2026-06-29T10:15:30.000Z"
+  }
+}
+```
+
+### Error Responses
+
+| Status | Scenario                              |
+|--------|------------------------------------------|
+| 401    | Missing, invalid, or expired access token |
+
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": "Unauthorized",
+  "path": "/api/v1/users/me",
+  "meta": {
+    "requestId": "req_9c4ad0bc3774418a",
+    "timestamp": "2026-06-29T10:15:30.000Z"
+  }
+}
+```
+
+---
+
+## 10. GET /admin/users
 
 Returns a paginated list of all users. Admin-only.
 
@@ -692,7 +759,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 10. PATCH /admin/users/:userId/blocklist
+## 11. PATCH /admin/users/:userId/blocklist
 
 Blocklists (or un-blocklists) a user account, preventing future logins. Admin-only.
 
@@ -764,7 +831,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 11. DELETE /admin/users/:userId
+## 12. DELETE /admin/users/:userId
 
 Permanently deletes a user account. Admin-only.
 
@@ -821,9 +888,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-# Section 2: URL Shortening
+# Section 3: URL Shortening
 
-## 12. POST /shorten
+## 13. POST /shorten
 
 Creates a shortened URL for a given destination link.
 
@@ -902,7 +969,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (optional)
 
 ---
 
-## 13. GET /:shortURL
+## 14. GET /:shortURL
 
 Redirects the client to the original destination URL associated with a short code.
 
@@ -954,7 +1021,7 @@ These return the standard JSON error envelope, since there's no destination to r
 
 ---
 
-## 14. GET /admin/short-urls
+## 15. GET /admin/short-urls
 
 Returns a paginated list of all short URLs in the system, for moderation and oversight. Admin-only.
 
@@ -1032,7 +1099,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 15. GET /admin/short-urls/:shortURL
+## 16. GET /admin/short-urls/:shortURL
 
 Returns detailed metadata and click analytics for a single short URL. Admin-only.
 

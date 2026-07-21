@@ -1,4 +1,4 @@
-import authRepository, { type RegisterPayload } from './authRepository';
+import authRepository, { type RegisterPayload, type LoginPayload } from './authRepository';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 
 export interface FieldErrors {
@@ -51,6 +51,34 @@ export class AuthService {
       email: payload.email,
       password: payload.password
     });
+  }
+
+  /**
+   * Validates login credentials and calls the repository.
+   * Throws an error containing field-specific errors if validation fails.
+   */
+  public async login(payload: LoginPayload): Promise<any> {
+    const errors: FieldErrors = {};
+
+    if (!payload.email?.trim()) errors.email = 'Email address is required';
+    if (!payload.password) errors.password = 'Password is required';
+
+    if (payload.email && !isValidEmail(payload.email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      throw { name: 'ValidationError', fieldErrors: errors };
+    }
+
+    return authRepository.login({
+      email: payload.email,
+      password: payload.password
+    });
+  }
+
+  public async logout(): Promise<any> {
+    return authRepository.logout();
   }
 }
 

@@ -239,7 +239,59 @@ Content-Type: application/json
 
 ---
 
-## 3. POST /auth/email-verification-link
+## 3. POST /auth/logout
+
+Logs out the currently authenticated user by blacklisting their refresh token in the database and storing their access token in Redis until it expires, preventing further use.
+
+**Auth required:** Yes — `Authorization: Bearer <access_token>`
+
+### Request
+
+```http
+POST /api/v1/auth/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+_No request body required._
+
+### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Logged out successfully",
+  "data": null,
+  "meta": {
+    "requestId": "req_63f6d2bca8194b63",
+    "timestamp": "2026-06-29T10:15:30.000Z"
+  }
+}
+```
+
+### Error Responses
+
+| Status | Scenario                              |
+|--------|------------------------------------------|
+| 401    | Missing, invalid, or expired access token |
+
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": "Unauthorized",
+  "path": "/api/v1/auth/logout",
+  "meta": {
+    "requestId": "req_9c4ad0bc3774418a",
+    "timestamp": "2026-06-29T10:15:30.000Z"
+  }
+}
+```
+
+---
+
+## 4. POST /auth/email-verification-link
 
 Generates and sends a fresh email verification token/link to the logged-in user's registered email. Useful when the original link expired or was never received.
 
@@ -298,7 +350,7 @@ _No request body needed — the user is identified via the access token._
 
 ---
 
-## 4. POST /auth/verify-email
+## 5. POST /auth/verify-email
 
 Verifies a user's email using the token issued via the verification link.
 
@@ -363,7 +415,7 @@ Content-Type: application/json
 
 ---
 
-## 5. POST /auth/forgot-password
+## 6. POST /auth/forgot-password
 
 Generates a password reset token and emails a reset link to the user.
 
@@ -426,7 +478,7 @@ Content-Type: application/json
 
 ---
 
-## 6. POST /auth/reset-password
+## 7. POST /auth/reset-password
 
 Resets the user's password using the token issued by `/forgot-password`.
 
@@ -493,7 +545,7 @@ Content-Type: application/json
 
 ---
 
-## 7. POST /auth/refresh
+## 8. POST /auth/refresh
 
 Issues a new short-lived access token using a valid refresh token, so the user stays logged in without re-entering credentials.
 
@@ -564,7 +616,7 @@ Set-Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secu
 
 ---
 
-## 8. GET /admin/users
+## 9. GET /admin/users
 
 Returns a paginated list of all users. Admin-only.
 
@@ -640,7 +692,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 9. PATCH /admin/users/:userId/blocklist
+## 10. PATCH /admin/users/:userId/blocklist
 
 Blocklists (or un-blocklists) a user account, preventing future logins. Admin-only.
 
@@ -712,7 +764,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 10. DELETE /admin/users/:userId
+## 11. DELETE /admin/users/:userId
 
 Permanently deletes a user account. Admin-only.
 
@@ -771,7 +823,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # Section 2: URL Shortening
 
-## 11. POST /shorten
+## 12. POST /shorten
 
 Creates a shortened URL for a given destination link.
 
@@ -850,7 +902,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (optional)
 
 ---
 
-## 12. GET /:shortURL
+## 13. GET /:shortURL
 
 Redirects the client to the original destination URL associated with a short code.
 
@@ -902,7 +954,7 @@ These return the standard JSON error envelope, since there's no destination to r
 
 ---
 
-## 13. GET /admin/short-urls
+## 14. GET /admin/short-urls
 
 Returns a paginated list of all short URLs in the system, for moderation and oversight. Admin-only.
 
@@ -980,7 +1032,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 14. GET /admin/short-urls/:shortURL
+## 15. GET /admin/short-urls/:shortURL
 
 Returns detailed metadata and click analytics for a single short URL. Admin-only.
 

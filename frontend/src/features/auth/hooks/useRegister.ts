@@ -23,7 +23,7 @@ export const useRegister = () => {
       formData.confirmPassword
     ),
     onSuccess: () => {
-      toast.success('Registration successful. Redirecting...');
+      toast.success('Registration successful.');
       setTimeout(() => {
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
         navigate('/login');

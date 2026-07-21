@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import STORAGE_KEYS from '../constants/storageKeys';
 
 interface ThemeContextType {
   isDarkMode: boolean;
@@ -7,17 +8,15 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'urlify-theme';
-
 function getInitialTheme(): boolean {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = localStorage.getItem(STORAGE_KEYS.THEME);
   if (stored !== null) return stored === 'dark';
   // Respect OS preference as fallback
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDarkMode, setIsDarkMode] = useState(getInitialTheme);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -26,7 +25,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem(STORAGE_KEY, isDarkMode ? 'dark' : 'light');
+    localStorage.setItem(STORAGE_KEYS.THEME, isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   const toggleDarkMode = () => setIsDarkMode((prev) => !prev);

@@ -41,6 +41,13 @@ class AuthRepository {
   }
 
   /**
+   * Authenticates a user and issues an access token.
+   */
+  public async logout<T = any>(): Promise<T> {
+    return apiClient.post<T>('/auth/logout');
+  }
+
+  /**
    * Creates a new user account and triggers an email verification flow.
    */
   public async register<T = any>(data: RegisterPayload): Promise<T> {

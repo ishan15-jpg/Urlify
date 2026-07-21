@@ -13,6 +13,7 @@ import Register from './features/auth/components/Register';
 import PasswordReset from './features/auth/components/PasswordReset';
 import AuthHeader from './components/AuthHeader';
 import CreatedLinks from './features/links/components/CreatedLinks';
+import { AuthenticationProvider } from './store/AuthenticationContext';
 
 const queryClient = new QueryClient();
 
@@ -21,38 +22,40 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeProvider>
-        <Toaster position="top-right" />
-        <Routes>
-          <Route path="/" element={<>
-            <Header />
-            <Home />
-            <Footer />
-          </>} />
-          <Route path="/login" element={<>
-            <AuthHeader />
-            <Login />
-            <Footer />
-          </>} />
-          <Route path="/register" element={<>
-            <AuthHeader />
-            <Register />
-            <Footer />
-          </>} />
-          <Route path="/account-settings" element={<>
-            <Header />
-            <AccountSettings />
-            <Footer />
-          </>} />
-          <Route path="/links" element={<>
-            <Header />
-            <CreatedLinks />
-            <Footer />
-          </>} />
-          <Route path="/change-password" element={<PasswordChange />} />
-          <Route path="/verify-email" element={<EmailVerification />} />
-          <Route path="/reset-password" element={<PasswordReset />} />
-        </Routes>
-      </ThemeProvider>
+          <AuthenticationProvider>
+            <Toaster position="top-right" />
+            <Routes>
+              <Route path="/" element={<>
+                <Header />
+                <Home />
+                <Footer />
+              </>} />
+              <Route path="/login" element={<>
+                <AuthHeader />
+                <Login />
+                <Footer />
+              </>} />
+              <Route path="/register" element={<>
+                <AuthHeader />
+                <Register />
+                <Footer />
+              </>} />
+              <Route path="/account-settings" element={<>
+                <Header />
+                <AccountSettings />
+                <Footer />
+              </>} />
+              <Route path="/links" element={<>
+                <Header />
+                <CreatedLinks />
+                <Footer />
+              </>} />
+              <Route path="/change-password" element={<PasswordChange />} />
+              <Route path="/verify-email" element={<EmailVerification />} />
+              <Route path="/reset-password" element={<PasswordReset />} />
+            </Routes>
+          </AuthenticationProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

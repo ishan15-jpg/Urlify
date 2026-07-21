@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../store/ThemeContext';
+import { useAuthentication } from '../store/AuthenticationContext';
+import { useLogout } from '../features/auth/hooks/useLogout';
 
 function Header() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [isAuthenticated, _] = useState(false);
+  const { isAuthenticated } = useAuthentication();
+  const { onClick: handleLogout } = useLogout();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface border-b border-outline-variant">
@@ -72,7 +75,10 @@ function Header() {
                     </Link>
                     <button
                       className="block w-full text-left px-4 py-3 text-body-md text-error hover:bg-surface-container-high transition-colors cursor-pointer"
-                      onClick={() => setAccountMenuOpen(false)}
+                      onClick={e => {
+                        setAccountMenuOpen(false);
+                        handleLogout(e);
+                      }}
                     >
                       Logout
                     </button>

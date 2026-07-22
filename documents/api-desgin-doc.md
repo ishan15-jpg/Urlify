@@ -82,9 +82,10 @@ All responses — success or error — follow this shape so clients can parse pr
 
 **Section 3 — URL Shortening**
 13. [POST /shorten](#13-post-shorten)
-14. [GET /:shortURL](#14-get-shorturl)
-15. [GET /admin/short-urls](#15-get-adminshort-urls)
-16. [GET /admin/short-urls/:shortURL](#16-get-adminshort-urlsshorturl)
+14. [GET /short-urls](#14-get-short-urls)
+15. [GET /:shortURL](#15-get-shorturl)
+16. [GET /admin/short-urls](#16-get-adminshort-urls)
+17. [GET /admin/short-urls/:shortURL](#17-get-adminshort-urlsshorturl)
 
 **Appendix**
 17. [Common Error Codes](#common-error-codes)
@@ -969,7 +970,80 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (optional)
 
 ---
 
-## 14. GET /:shortURL
+## 14. GET /short-urls
+
+Returns a paginated list of all active (non-expired) short URLs created by the currently authenticated user. By default, the URLs are sorted in descending order of creation time (newest first).
+
+**Auth required:** Yes — `Authorization: Bearer <access_token>`
+
+### Request
+
+```http
+GET /api/v1/short-urls?page=1&limit=20
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+| Query Param | Type   | Required | Description                                   |
+|-------------|--------|----------|------------------------------------------------|
+| page        | number | No       | Page number (default: 1)                       |
+| limit       | number | No       | Items per page (default: 20, max: 100)          |
+
+### Success Response — `200 OK`
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Short URLs fetched successfully",
+  "data": {
+    "shortUrls": [
+      {
+        "id": "9c4d2a1b-7e3f-4a8c-9b1d-3e5f7a9c1b2d",
+        "shortCode": "sd-prep",
+        "originalUrl": "https://example.com/blog/system-design-interview-prep-guide",
+        "shortUrl": "https://snip.io/sd-prep",
+        "isActive": true,
+        "createdAt": "2026-06-29T10:15:30.000Z",
+        "expiresAt": "2026-12-31T23:59:59.000Z"
+      }
+    ],
+    "pagination": {
+      "totalItems": 45,
+      "currentPage": 1,
+      "totalPages": 3,
+      "limit": 20
+    }
+  },
+  "meta": {
+    "requestId": "req_5d6e7f8a9b0c1d2e",
+    "timestamp": "2026-06-29T10:15:30.000Z"
+  }
+}
+```
+
+### Error Responses
+
+| Status | Scenario                                  |
+|--------|---------------------------------------------|
+| 401    | Missing, invalid, or expired access token    |
+
+```json
+{
+  "success": false,
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": "Unauthorized",
+  "path": "/api/v1/short-urls",
+  "meta": {
+    "requestId": "req_8a9b0c1d2e3f4a5b",
+    "timestamp": "2026-06-29T10:15:30.000Z"
+  }
+}
+```
+
+---
+
+## 15. GET /:shortURL
 
 Redirects the client to the original destination URL associated with a short code.
 
@@ -1021,7 +1095,7 @@ These return the standard JSON error envelope, since there's no destination to r
 
 ---
 
-## 15. GET /admin/short-urls
+## 16. GET /admin/short-urls
 
 Returns a paginated list of all short URLs in the system, for moderation and oversight. Admin-only.
 
@@ -1099,7 +1173,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 16. GET /admin/short-urls/:shortURL
+## 17. GET /admin/short-urls/:shortURL
 
 Returns detailed metadata and click analytics for a single short URL. Admin-only.
 

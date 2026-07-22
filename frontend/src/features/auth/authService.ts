@@ -87,4 +87,8 @@ export default class AuthService implements IAuthService {
   public async logout(): Promise<any> {
     return this.authRepository.logout();
   }
+
+  public async refreshToken(): Promise<any> {
+    return this.authRepository.refreshToken();
+  }
 };

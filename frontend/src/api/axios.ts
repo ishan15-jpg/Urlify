@@ -13,6 +13,7 @@ class AxiosClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true,
     });
 
     interceptorManager.setupInterceptors(this.axiosInstance);

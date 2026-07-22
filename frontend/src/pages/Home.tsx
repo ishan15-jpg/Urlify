@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import MainLayout from '../layouts/MainLayout';
+import HomeLayout from '../layouts/HomeLayout';
 import ShortenUrlForm from '../features/links/components/ShortenUrlForm';
 
 function Home() {
   return (
-    <MainLayout>
+    <HomeLayout>
       <main className="grow pt-32 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full relative">
         {/* Hero Section */}
         <section className="max-w-4xl mx-auto flex flex-col items-center text-center">
@@ -32,7 +32,7 @@ function Home() {
           </div>
         </section>
       </main>
-    </MainLayout>
+    </HomeLayout>
   );
 }
 

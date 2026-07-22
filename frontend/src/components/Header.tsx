@@ -4,6 +4,7 @@ import { useTheme } from '../store/ThemeContext';
 import { useAuthentication } from '../store/AuthenticationContext';
 import { useLogout } from '../features/auth/hooks/useLogout';
 
+
 function Header() {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);

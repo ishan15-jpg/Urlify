@@ -28,7 +28,9 @@ export class UsersController {
         success: true,
         statusCode: 200,
         message: 'User profile fetched successfully',
-        data: toUserProfileDto(user),
+        data: {
+          user: toUserProfileDto(user)
+        },
         meta: {
           requestId: req.headers['x-request-id'] ?? null,
           timestamp: new Date().toISOString(),

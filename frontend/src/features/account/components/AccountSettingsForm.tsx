@@ -1,10 +1,15 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { type User } from '../../../types';
 
-function AccountSettings() {
-  const [fullName, setFullName] = useState('Alex Mitchell');
-  const [email, setEmail] = useState('alex.m@example.com');
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
+interface Props {
+  profile: User;
+}
+
+function AccountSettingsForm({ profile }: Props) {
+  const [fullName, setFullName] = useState(profile.name);
+  const [email, setEmail] = useState(profile.email);
+  const [isEmailVerified, setIsEmailVerified] = useState(profile.isEmailVerified);
   const [isEditing, setIsEditing] = useState(false);
   
   // Notification state
@@ -14,7 +19,7 @@ function AccountSettings() {
   const snapshot = useRef({ fullName: '', email: '' });
 
   // Track the last verified email so we can detect email changes
-  const verifiedEmail = useRef('');
+  const verifiedEmail = useRef(profile.email);
 
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
@@ -34,7 +39,7 @@ function AccountSettings() {
     setIsEditing(false);
   };
 
-  const handleSubmit = (e: React.ChangeEvent) => {
+  const handleSubmit = (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
     // If email changed from the last verified email, mark as unverified
     if (isEmailVerified && email !== verifiedEmail.current) {
@@ -65,54 +70,28 @@ function AccountSettings() {
   const handlePasswordChange = () => {};
 
   return (
-  <>
-    {/* Toast Notification */}
-    {notification && (
-      <div
-        className={`fixed top-20 right-4 md:top-24 md:right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg font-medium text-white transition-opacity duration-300 ${
-          notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-        }`}
-        role="alert"
-      >
-        <span className="material-symbols-outlined text-[24px]">
-          {notification.type === 'success' ? 'check_circle' : 'error'}
-        </span>
-        <span className="text-body-md">{notification.message}</span>
-        <button 
-          onClick={() => setNotification(null)}
-          className="ml-4 hover:opacity-80 transition-opacity flex items-center justify-center"
-          aria-label="Close notification"
+    <>
+      {/* Toast Notification */}
+      {notification && (
+        <div
+          className={`fixed top-20 right-4 md:top-24 md:right-8 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-lg font-medium text-white transition-opacity duration-300 ${
+            notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          }`}
+          role="alert"
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
-        </button>
-      </div>
-    )}
-
-    <main className="grow pt-24 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full">
-      {/* Breadcrumbs */}
-      <nav
-        className="flex items-center gap-2 mb-8 text-label-md"
-        aria-label="Breadcrumb"
-      >
-        <Link
-          to="/"
-          className="text-primary-container hover:underline font-semibold"
-        >
-          Home
-        </Link>
-        <span className="text-outline-variant">/</span>
-        <span className="text-on-surface font-bold">Account Settings</span>
-      </nav>
-
-      {/* Page Heading */}
-      <div className="mb-8">
-        <h1 className="text-[32px] leading-[40px] md:text-headline-xl font-bold text-on-surface tracking-tight">
-          Account Settings
-        </h1>
-        <p className="text-on-surface-variant text-body-md mt-2">
-          Manage your profile information and security preferences.
-        </p>
-      </div>
+          <span className="material-symbols-outlined text-[24px]">
+            {notification.type === 'success' ? 'check_circle' : 'error'}
+          </span>
+          <span className="text-body-md">{notification.message}</span>
+          <button 
+            onClick={() => setNotification(null)}
+            className="ml-4 hover:opacity-80 transition-opacity flex items-center justify-center"
+            aria-label="Close notification"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+      )}
 
       {/* Settings Form Card */}
       <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-10 md:p-10 shadow-sm">
@@ -193,8 +172,7 @@ function AccountSettings() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 readOnly={!isEditing}
-                className={`w-full py-4 rounded-lg border text-body-md text-on-surface placeholder:text-outline transition-all 
-                } ${
+                className={`w-full py-4 rounded-lg border text-body-md text-on-surface placeholder:text-outline transition-all ${
                   isEditing
                     ? 'px-4 border-outline-variant bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary'
                     : 'border-transparent bg-transparent cursor-default focus:outline-none'
@@ -264,8 +242,8 @@ function AccountSettings() {
           </button>
         )}
       </div>
-    </main>
-  </>);
+    </>
+  );
 }
 
-export default AccountSettings;
+export default AccountSettingsForm;

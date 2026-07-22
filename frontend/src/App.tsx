@@ -1,18 +1,15 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './pages/Home/Home';
-import AccountSettings from './features/account/components/AccountSettings';
+import Home from './pages/Home';
+import AccountSettings from './pages/AccountSettings';
 import { ThemeProvider } from './store/ThemeContext';
-import PasswordChange from './features/auth/components/PasswordChange';
+import PasswordChange from './pages/PasswordChange';
+import PasswordReset from './pages/PasswordReset';
 import EmailVerification from './features/auth/components/EmailVerification';
-import Login from './features/auth/components/Login';
-import Register from './features/auth/components/Register';
-import PasswordReset from './features/auth/components/PasswordReset';
-import AuthHeader from './components/AuthHeader';
-import CreatedLinks from './features/links/components/CreatedLinks';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import CreatedLinks from './pages/CreatedLinks';
 import { AuthenticationProvider } from './store/AuthenticationContext';
 
 const queryClient = new QueryClient();
@@ -22,34 +19,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeProvider>
+          <Toaster position="top-right" />
           <AuthenticationProvider>
-            <Toaster position="top-right" />
             <Routes>
-              <Route path="/" element={<>
-                <Header />
-                <Home />
-                <Footer />
-              </>} />
-              <Route path="/login" element={<>
-                <AuthHeader />
-                <Login />
-                <Footer />
-              </>} />
-              <Route path="/register" element={<>
-                <AuthHeader />
-                <Register />
-                <Footer />
-              </>} />
-              <Route path="/account-settings" element={<>
-                <Header />
-                <AccountSettings />
-                <Footer />
-              </>} />
-              <Route path="/links" element={<>
-                <Header />
-                <CreatedLinks />
-                <Footer />
-              </>} />
+              <Route path="/" element={<Home/>} />
+              <Route path="/login" element={<Login/>} />
+              <Route path="/register" element={<Register/>} />
+              <Route path="/account-settings" element={<AccountSettings/>} />
+              <Route path="/links" element={<CreatedLinks/>} />
               <Route path="/change-password" element={<PasswordChange />} />
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/reset-password" element={<PasswordReset />} />

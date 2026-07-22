@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Spinner from '../../../components/Spinner';
 import { useRegister } from '../hooks/useRegister';
 
-function Register() {
+function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { formData, fieldErrors, globalError, isLoading, handleChange, onSubmit } = useRegister();
@@ -162,4 +162,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default RegisterForm;

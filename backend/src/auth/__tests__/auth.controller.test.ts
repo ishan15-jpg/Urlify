@@ -56,6 +56,7 @@ describe('AuthController.register', () => {
       processForgotPassword: jest.fn(),
       resetPassword: jest.fn(),
       refreshSession: jest.fn(),
+      logout: jest.fn()
     };
     controller = new AuthController(mockService);
   });

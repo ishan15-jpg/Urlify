@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom';
 import Spinner from '../../../components/Spinner';
 import { useLogin } from '../hooks/useLogin';
 
-function Login() {
+function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { formData, fieldErrors, globalError, isLoading, handleChange, onSubmit } = useLogin();
 
   return (
       <main className="flex justify-center grow pt-32 pb-16 px-[var(--spacing-gutter)] max-w-[var(--spacing-container-max)] mx-auto w-full relative">
         <section className="w-full max-w-[480px]">
-          {/* Login Card */}
+          {/* LoginForm Card */}
           <div className="form-card bg-surface-container-lowest rounded-xl p-8 md:p-10 shadow-sm border border-outline-variant/30">
             <div className="mb-8">
               <h1 className="text-headline-lg font-bold text-on-surface mb-2">Welcome back</h1>
@@ -85,4 +85,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default LoginForm;

@@ -21,16 +21,6 @@ function PasswordResetForm(){
     };
 
     return (
-        <div className="bg-background text-on-background min-h-screen flex flex-col">
-      {/* Top Bar (Minimal Branding for Transactional Flows) */}
-      <header className="bg-surface border-b border-outline-variant h-16 w-full px-[var(--spacing-gutter)] flex items-center sticky top-0 z-50 justify-center">
-        <div className="flex items-center gap-2">
-          <Link to="/" className="text-2xl font-bold tracking-tight text-primary">
-            Urlify
-          </Link>
-        </div>
-      </header>
-
       <main className="flex-grow flex items-center justify-center px-[var(--spacing-gutter)] py-16 relative overflow-hidden">
         {/* Background Atmospheric Element */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
@@ -126,22 +116,6 @@ function PasswordResetForm(){
           </section>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-surface-container-low border-t border-outline-variant w-full mt-auto">
-        <div className="max-w-[var(--spacing-container-max)] mx-auto px-[var(--spacing-gutter)] py-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col md:items-start items-center">
-            <span className="text-label-md font-bold text-primary mb-1">Urlify</span>
-            <p className="text-label-sm text-on-surface-variant text-center md:text-left">© 2026 Urlify. All rights reserved.</p>
-          </div>
-          <nav className="flex flex-wrap justify-center gap-8">
-            <a className="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
-            <a className="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
-            <a className="text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a>
-          </nav>
-        </div>
-      </footer>
-    </div>
     )
 }
 

@@ -68,7 +68,7 @@ export default function LinksTable({ links, pagination, onPageChange }: LinksTab
                       <span className="material-symbols-outlined text-[18px]">
                         {expirationText === 'Never' ? 'all_inclusive' : isExpired ? 'timer' : 'calendar_today'}
                       </span>
-                      {expirationText}
+                      <span>{expirationText}</span>
                     </div>
                   </td>
                 </tr>

@@ -979,7 +979,7 @@ Returns a paginated list of all active (non-expired) short URLs created by the c
 ### Request
 
 ```http
-GET /api/v1/short-urls?page=1&limit=20
+GET /api/v1/urls/me?page=1&limit=20
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 

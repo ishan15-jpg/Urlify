@@ -42,4 +42,9 @@ export interface IUrlService {
    * Retrieves detailed URL entity for moderation.
    */
   getShortUrlDetails(shortCode: string): Promise<Url>;
+
+  /**
+   * Retrieves a paginated list of active short URLs for a specific user.
+   */
+  getMyUrls(userId: string, params: { page: number; limit: number }): Promise<{ urls: Url[]; totalItems: number }>;
 }

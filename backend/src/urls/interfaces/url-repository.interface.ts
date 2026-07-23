@@ -56,4 +56,12 @@ export interface IUrlRepository {
     sortOrder?: 'asc' | 'desc';
     status?: 'active' | 'expired';
   }): Promise<{ urls: Url[]; totalItems: number }>;
+
+  /**
+   * Retrieves a paginated list of active short URLs for a specific user.
+   */
+  findByUserId(userId: string, params: {
+    offset: number;
+    limit: number;
+  }): Promise<{ urls: Url[]; totalItems: number }>;
 }

@@ -970,7 +970,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (optional)
 
 ---
 
-## 14. GET /short-urls
+## 14. GET /me
 
 Returns a paginated list of all active (non-expired) short URLs created by the currently authenticated user. By default, the URLs are sorted in descending order of creation time (newest first).
 

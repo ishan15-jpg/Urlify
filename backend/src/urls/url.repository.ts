@@ -139,6 +139,38 @@ export class UrlRepository implements IUrlRepository {
     return { urls, totalItems };
   }
 
+  async findByUserId(userId: string, params: {
+    offset: number;
+    limit: number;
+  }): Promise<{ urls: Url[]; totalItems: number }> {
+    logger.debug(`Database query: findByUserId initiated for user: ${userId}, offset: ${params.offset}, limit: ${params.limit}`);
+    const conditions = [
+      'user_id = $1',
+      'is_deleted = false',
+      '(is_expired = false AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP))',
+    ];
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+    // 1. Fetch total count
+    const countQuery = `SELECT COUNT(*) as count FROM urls ${whereClause}`;
+    const countResult = await this.db.query<{ count: string }>(countQuery, [userId]);
+    const totalItems = parseInt(countResult.rows[0]?.count || '0', 10);
+
+    // 2. Select paginated results ordered by creation time descending
+    const selectQuery = `
+      SELECT id, user_id, original_url, short_url, is_deleted, is_expired, click_count, expires_at, created_at, updated_at
+      FROM urls
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await this.db.query<Record<string, unknown>>(selectQuery, [userId, params.limit, params.offset]);
+    const urls = result.rows.map((row) => this.toEntity(row));
+
+    return { urls, totalItems };
+  }
+
   private toEntity(row: Record<string, unknown>): Url {
     return {
       id: String(row['id']),

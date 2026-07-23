@@ -55,6 +55,57 @@ export class UrlController {
     }
   };
 
+  getMyUrls = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // req.user is guaranteed to be present because of authenticate middleware
+      const userId = req.user!.userId;
+      const { page = '1', limit = '20' } = req.query as { page?: string; limit?: string };
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 20;
+
+      logger.info(`User fetch short URLs: userId=${userId}, page=${pageNum}, limit=${limitNum}`);
+
+      const { urls, totalItems } = await this.urlService.getMyUrls(userId, {
+        page: pageNum,
+        limit: limitNum,
+      });
+
+      const appUrl = process.env.APP_URL || 'http://localhost:8000';
+      const mappedUrls = urls.map(url => ({
+        id: url.id,
+        shortCode: url.shortUrl,
+        originalUrl: url.originalUrl,
+        shortUrl: `${appUrl}/${url.shortUrl}`,
+        isActive: !url.isDeleted && !url.isExpired && (!url.expiresAt || url.expiresAt > new Date()),
+        createdAt: url.createdAt.toISOString(),
+        expiresAt: url.expiresAt ? url.expiresAt.toISOString() : null,
+      }));
+
+      const totalPages = Math.ceil(totalItems / limitNum);
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Short URLs fetched successfully',
+        data: {
+          shortUrls: mappedUrls,
+          pagination: {
+            totalItems,
+            currentPage: pageNum,
+            totalPages,
+            limit: limitNum,
+          },
+        },
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   getShortUrls = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { page, limit, search, sortBy, sortOrder, status } = req.query as any;

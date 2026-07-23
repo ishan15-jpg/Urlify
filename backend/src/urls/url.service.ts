@@ -260,4 +260,10 @@ export class UrlService implements IUrlService {
     }
     return urlRecord;
   }
+
+  async getMyUrls(userId: string, params: { page: number; limit: number }): Promise<{ urls: Url[]; totalItems: number }> {
+    const offset = (params.page - 1) * params.limit;
+    logger.info(`Fetching short URLs for user ${userId}: page=${params.page}, limit=${params.limit}, offset=${offset}`);
+    return this.urlRepository.findByUserId(userId, { offset, limit: params.limit });
+  }
 }

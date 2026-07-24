@@ -2,6 +2,7 @@ import type { IAuthRepository } from './interfaces/authRepositoryInterface';
 import type { RegisterPayload, LoginPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 import type { IAuthService } from './interfaces/authServiceInterface';
+import type { VerifyEmailResponseData } from '../../types/authResponses';
 
 export interface FieldErrors {
   name?: string;
@@ -86,6 +87,11 @@ export default class AuthService implements IAuthService {
 
   public async logout(): Promise<any> {
     return this.authRepository.logout();
+  }
+
+  public async verifyEmail(token: string): Promise<VerifyEmailResponseData> {
+    const response = await this.authRepository.verifyEmail({ token });
+    return response.data
   }
 
   public async refreshToken(): Promise<any> {

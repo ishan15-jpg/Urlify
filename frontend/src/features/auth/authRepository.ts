@@ -7,6 +7,8 @@ import type {
   ForgotPasswordPayload, 
   ResetPasswordPayload 
 } from '../../types';
+import type { ApiResponse } from '../../types/apiResponse';
+import type { VerifyEmailResponseData } from '../../types/authResponses';
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
 
 // --- AuthRepository implementation ---
@@ -49,8 +51,8 @@ export default class AuthRepository implements IAuthRepository {
   /**
    * Verifies an email using the token sent to the user.
    */
-  public async verifyEmail<T = any>(data: VerifyEmailPayload): Promise<T> {
-    return this.apiClient.post<T>('/auth/verify-email', data);
+  public async verifyEmail(data: VerifyEmailPayload): Promise<ApiResponse<VerifyEmailResponseData>> {
+    return this.apiClient.post<ApiResponse<VerifyEmailResponseData>>('/auth/verify-email', data);
   }
 
   /**

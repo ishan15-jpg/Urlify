@@ -6,7 +6,7 @@ import AccountSettings from './pages/AccountSettings';
 import { ThemeProvider } from './store/ThemeContext';
 import PasswordChange from './pages/PasswordChange';
 import PasswordReset from './pages/PasswordReset';
-import EmailVerification from './features/auth/components/EmailVerification';
+import EmailVerification from './pages/EmailVerification';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CreatedLinks from './pages/CreatedLinks';

@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { authService } from '../authModule';
 
 function EmailVerification() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+
+  const navigate = useNavigate();
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -16,8 +18,7 @@ function EmailVerification() {
     if (hasAttempted.current) return;
     
     if (!token) {
-      setStatus('error');
-      setErrorMessage('Verification token is missing.');
+      navigate('/');
       return;
     }
 

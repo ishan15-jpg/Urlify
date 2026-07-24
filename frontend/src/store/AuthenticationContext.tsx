@@ -40,7 +40,7 @@ export function AuthenticationProvider({ children }: { children: ReactNode }) {
         const intervalId = setInterval(async () => {
             try {
                 const response = await authService.refreshToken();
-                const newAccessToken = response.data?.accessToken;
+                const newAccessToken = response.accessToken;
                 if (newAccessToken) {
                     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
                 } else {

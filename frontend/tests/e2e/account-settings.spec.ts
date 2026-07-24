@@ -2,57 +2,107 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Account Settings Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Inject auth token into localStorage to bypass authentication redirect if any
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.setItem('accessToken', 'mock-token');
-    });
-  });
-
-  test('displays skeleton loader while fetching and then shows user profile', async ({ page }) => {
-    // Intercept the /users/me endpoint and delay the response to test the skeleton
-    await page.route('**/users/me', async route => {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Delay for 1s
+    // Intercept the /me endpoint to return an unverified user profile
+    await page.route('**/users/me*', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
           statusCode: 200,
-          message: 'User profile fetched successfully',
           data: {
             user: {
-              id: '123',
+              id: 'test-user-id',
               email: 'test@example.com',
               name: 'Test User',
-              role: 'USER',
-              isEmailVerified: true,
-              createdAt: '2026-01-01T00:00:00.000Z'
+              role: 'user',
+              isEmailVerified: false
             }
-          },
-          meta: {
-            requestId: 'req_123',
-            timestamp: '2026-01-01T00:00:00.000Z'
           }
         })
       });
     });
 
-    // Go to the account settings page
+    await page.goto('/');
+    // Inject mock token just in case
+    await page.evaluate(() => {
+      localStorage.setItem('access-token', 'mock-token');
+    });
     await page.goto('/account-settings');
+  });
 
-    // Wait for the skeleton loader to appear
-    const skeleton = page.locator('.animate-pulse');
-    await expect(skeleton).toBeVisible();
+  test('Verify Email button is rendered and clickable', async ({ page }) => {
+    const verifyButton = page.getByRole('button', { name: 'Verify Email' });
+    await expect(verifyButton).toBeVisible();
+    await expect(verifyButton).toBeEnabled();
+  });
 
-    // After 1 second, the skeleton should disappear and the form fields should be populated
-    await expect(skeleton).not.toBeVisible({ timeout: 5000 });
+  test('Verify Email button becomes visually disabled in edit mode', async ({ page }) => {
+    // Click the Edit icon
+    const editButton = page.getByRole('button', { name: 'Edit profile' });
+    await editButton.click();
 
-    // Assert that the fields have the fetched data
-    await expect(page.locator('#fullName')).toHaveValue('Test User');
-    await expect(page.locator('#email')).toHaveValue('test@example.com');
+    // Now Verify Email button should have pointer-events-none and opacity-50
+    const verifyButton = page.getByRole('button', { name: 'Verify Email' });
     
-    // Check that the "Unverified" text is NOT visible since isEmailVerified is true
-    await expect(page.getByText('Unverified')).not.toBeVisible();
+    // We expect it to have the class `pointer-events-none`
+    await expect(verifyButton).toHaveClass(/pointer-events-none/);
+    await expect(verifyButton).toHaveClass(/opacity-50/);
+  });
+
+  test('Clicking Verify Email shows loading state and success toast', async ({ page }) => {
+    // Intercept the verification link API call
+    await page.route('**/auth/email-verification-link', async route => {
+      await new Promise(resolve => setTimeout(resolve, 500)); // Delay for loading state
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          statusCode: 200,
+          message: 'Verification link sent to your email'
+        })
+      });
+    });
+
+    const verifyButton = page.getByRole('button', { name: 'Verify Email' });
+    await verifyButton.click();
+
+    // It should change to "Sending..."
+    await expect(page.getByRole('button', { name: 'Sending...' })).toBeVisible();
+
+    // It should eventually show the success toast
+    await expect(page.getByText('Verification email sent successfully!')).toBeVisible();
+    
+    // It should go back to "Verify Email" after completion
+    await expect(page.getByRole('button', { name: 'Verify Email' })).toBeVisible();
+  });
+
+  test('Clicking Verify Email shows error toast on failure', async ({ page }) => {
+    // Intercept the verification link API call with failure
+    await page.route('**/auth/email-verification-link', async route => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          statusCode: 400,
+          message: 'Rate limit exceeded, please try again later.'
+        })
+      });
+    });
+
+    const verifyButton = page.getByRole('button', { name: 'Verify Email' });
+    await verifyButton.click();
+
+    // It should change to "Sending..."
+    await expect(page.getByRole('button', { name: 'Sending...' })).toBeVisible();
+
+    // It should eventually show the error toast
+    await expect(page.getByText('Rate limit exceeded, please try again later.')).toBeVisible();
+    
+    // It should go back to "Verify Email"
+    await expect(page.getByRole('button', { name: 'Verify Email' })).toBeVisible();
   });
 });

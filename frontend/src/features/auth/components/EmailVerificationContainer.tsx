@@ -1,38 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { authService } from '../authModule';
+import { useSearchParams, Link } from 'react-router-dom';
+import { useVerifyEmail } from '../hooks/useVerifyEmail';
 
-function EmailVerification() {
+function EmailVerificationContainer() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
-  const navigate = useNavigate();
-  
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [errorMessage, setErrorMessage] = useState('');
-  
-  // Ref to prevent double-firing of useEffect in React 18 StrictMode
-  const hasAttempted = useRef(false);
-
-  useEffect(() => {
-    if (hasAttempted.current) return;
-    
-    if (!token) {
-      navigate('/');
-      return;
-    }
-
-    hasAttempted.current = true;
-
-    authService.verifyEmail(token)
-      .then(() => {
-        setStatus('success');
-      })
-      .catch((err: any) => {
-        setStatus('error');
-        setErrorMessage(err?.response?.data?.message || 'Verification link is invalid or has expired.');
-      });
-  }, [token]);
+  const { status, errorMessage } = useVerifyEmail(token);
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4 w-full h-full">
@@ -73,4 +46,4 @@ function EmailVerification() {
   );
 }
 
-export default EmailVerification;
+export default EmailVerificationContainer;

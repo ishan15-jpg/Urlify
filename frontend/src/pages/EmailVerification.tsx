@@ -1,10 +1,10 @@
 import AuthLayout from "../layouts/AuthLayout";
-import EmailVerificationComponent from "../features/auth/components/EmailVerification";
+import EmailVerificationContainer from "../features/auth/components/EmailVerificationContainer";
 
 function EmailVerification() {
     return (
         <AuthLayout>
-            <EmailVerificationComponent />
+            <EmailVerificationContainer />
         </AuthLayout>
     );
 }

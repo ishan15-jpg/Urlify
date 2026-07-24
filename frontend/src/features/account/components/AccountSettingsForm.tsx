@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { type User } from '../../../types';
+import VerifyEmailButton from '../../auth/components/VerifyEmailButton';
 
 interface Props {
   profile: User;
@@ -20,13 +21,6 @@ function AccountSettingsForm({ profile }: Props) {
 
   // Track the last verified email so we can detect email changes
   const verifiedEmail = useRef(profile.email);
-
-  const showNotification = (message: string, type: 'success' | 'error') => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000); // Auto-hide after 4 seconds
-  };
 
   const enterEditMode = () => {
     snapshot.current = { fullName, email };
@@ -49,23 +43,6 @@ function AccountSettingsForm({ profile }: Props) {
     setIsEditing(false);
   };
 
-  const handleVerifyEmail = async () => {
-    try {
-      // Basic validation mock for error demonstration
-      if (!email || !email.includes('@')) {
-        throw new Error('Please enter a valid email address.');
-      }
-      
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      setIsEmailVerified(true);
-      verifiedEmail.current = email;
-      showNotification('Email verified successfully!', 'success');
-    } catch (error) {
-      showNotification(error instanceof Error ? error.message : 'Failed to verify email.', 'error');
-    }
-  };
 
   const handlePasswordChange = () => {};
 
@@ -231,15 +208,7 @@ function AccountSettingsForm({ profile }: Props) {
           Change Password
         </Link>
         {!isEmailVerified && (
-          <button
-            onClick={handleVerifyEmail}
-            className={`flex items-center justify-center gap-2 bg-primary text-on-primary font-bold max-[500px]:flex-1 max-[500px]:px-4 max-[500px]:py-3 max-[500px]:text-xs px-8 py-4 rounded-lg hover:bg-primary/90 transition-all active:scale-95 ${isEditing ? 'pointer-events-none cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-          >
-            <span className="material-symbols-outlined text-[20px] max-[500px]:text-[16px]">
-              mark_email_read
-            </span>
-            Verify Email
-          </button>
+          <VerifyEmailButton email={email} disabled={isEditing} />
         )}
       </div>
     </>

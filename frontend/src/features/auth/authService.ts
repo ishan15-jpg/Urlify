@@ -1,8 +1,8 @@
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
-import type { RegisterPayload, LoginPayload, VerifyEmailPayload } from '../../types';
+import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 import type { IAuthService } from './interfaces/authServiceInterface';
-import type { RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponses';
+import type { EmailVerificationLinkResponseData, RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponses';
 
 export interface FieldErrors {
   name?: string;
@@ -87,6 +87,11 @@ export default class AuthService implements IAuthService {
 
   public async logout(): Promise<void> {
     await this.authRepository.logout();
+  }
+
+  public async sendEmailVerificationLink(data: EmailVerificationLinkPayload): Promise<EmailVerificationLinkResponseData> {
+    const response = await this.authRepository.sendEmailVerificationLink({ email: data.email });
+    return response.data;
   }
 
   public async verifyEmail(payload: VerifyEmailPayload): Promise<VerifyEmailResponseData> {

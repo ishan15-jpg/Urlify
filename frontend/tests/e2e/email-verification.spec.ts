@@ -1,14 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Email Verification Page', () => {
-  test('displays error state when token is missing', async ({ page }) => {
+  test('redirects to homepage when token is missing', async ({ page }) => {
     // Go to the page without a token in the URL
     await page.goto('/verify-email');
     
-    // Check if the error message is displayed
-    await expect(page.getByText('Verification Failed')).toBeVisible();
-    await expect(page.getByText('Verification token is missing.')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Return to Homepage' })).toBeVisible();
+    // Check if we are redirected to the homepage
+    await expect(page).toHaveURL('/');
   });
 
   test('displays loading state and then success state upon successful verification', async ({ page }) => {

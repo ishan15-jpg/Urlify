@@ -1,5 +1,3 @@
-import { type ApiResponse } from './apiResponse';
-
 // --- Specific Data Payloads for /auth Endpoints ---
 
 export interface User {
@@ -25,8 +23,18 @@ export interface VerifyEmailResponseData {
   isEmailVerified: boolean;
 }
 
-// --- Full Response Types ---
+export interface EmailVerificationLinkResponseData {
+  email: string;
+  expiresIn: number;
+}
 
+export interface VerifyEmailResponseData {
+  email: string;
+  isEmailVerified: boolean;
+}
 
-// For endpoints like forgot-password, reset-password, verify-email which typically don't return data, just a message
-export type StandardAuthResponse = ApiResponse<void>;
+export interface RefreshResponseData {
+  accessToken: string;
+  expiresIn: number;
+}
+

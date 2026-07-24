@@ -8,7 +8,7 @@ import type {
   ResetPasswordPayload 
 } from '../../types';
 import type { ApiResponse } from '../../types/apiResponse';
-import type { VerifyEmailResponseData } from '../../types/authResponses';
+import type { LoginResponseData, VerifyEmailResponseData, RegisterResponseData, EmailVerificationLinkResponseData, RefreshResponseData } from '../../types/authResponses';
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
 
 // --- AuthRepository implementation ---
@@ -23,29 +23,29 @@ export default class AuthRepository implements IAuthRepository {
   /**
    * Authenticates a user and issues an access token.
    */
-  public async login<T = any>(data: LoginPayload): Promise<T> {
-    return this.apiClient.post<T>('/auth/login', data);
+  public async login(data: LoginPayload): Promise<ApiResponse<LoginResponseData>> {
+    return this.apiClient.post<ApiResponse<LoginResponseData>>('/auth/login', data);
   }
 
   /**
    * Authenticates a user and issues an access token.
    */
-  public async logout<T = any>(): Promise<T> {
-    return this.apiClient.post<T>('/auth/logout');
+  public async logout(): Promise<ApiResponse<null>> {
+    return this.apiClient.post<ApiResponse<null>>('/auth/logout');
   }
 
   /**
    * Creates a new user account and triggers an email verification flow.
    */
-  public async register<T = any>(data: RegisterPayload): Promise<T> {
-    return this.apiClient.post<T>('/auth/register', data);
+  public async register(data: RegisterPayload): Promise<ApiResponse<RegisterResponseData>> {
+    return this.apiClient.post<ApiResponse<RegisterResponseData>>('/auth/register', data);
   }
 
   /**
    * Sends an email verification link.
    */
-  public async sendEmailVerificationLink<T = any>(data: EmailVerificationLinkPayload): Promise<T> {
-    return this.apiClient.post<T>('/auth/email-verification-link', data);
+  public async sendEmailVerificationLink(data: EmailVerificationLinkPayload): Promise<ApiResponse<EmailVerificationLinkResponseData>> {
+    return this.apiClient.post<ApiResponse<EmailVerificationLinkResponseData>>('/auth/email-verification-link', data);
   }
 
   /**
@@ -58,21 +58,21 @@ export default class AuthRepository implements IAuthRepository {
   /**
    * Initiates the forgot password flow by sending a reset link.
    */
-  public async forgotPassword<T = any>(data: ForgotPasswordPayload): Promise<T> {
-    return this.apiClient.post<T>('/auth/forgot-password', data);
+  public async forgotPassword(data: ForgotPasswordPayload): Promise<ApiResponse<null>> {
+    return this.apiClient.post<ApiResponse<null>>('/auth/forgot-password', data);
   }
 
   /**
    * Resets the user's password using the provided token.
    */
-  public async resetPassword<T = any>(data: ResetPasswordPayload): Promise<T> {
-    return this.apiClient.post<T>('/auth/reset-password', data);
+  public async resetPassword(data: ResetPasswordPayload): Promise<ApiResponse<null>> {
+    return this.apiClient.post<ApiResponse<null>>('/auth/reset-password', data);
   }
 
   /**
    * Refreshes the access token.
    */
-  public async refreshToken<T = any>(): Promise<T> {
-    return this.apiClient.post<T>('/auth/refresh');
+  public async refreshToken(): Promise<ApiResponse<RefreshResponseData>> {
+    return this.apiClient.post<ApiResponse<RefreshResponseData>>('/auth/refresh');
   }
 }

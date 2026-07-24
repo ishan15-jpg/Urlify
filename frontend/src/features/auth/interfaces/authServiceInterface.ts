@@ -1,10 +1,13 @@
-import type { RegisterPayload, LoginPayload } from '../../../types';
-import type { VerifyEmailResponseData } from '../../../types/authResponses';
+import type { RegisterPayload, LoginPayload, VerifyEmailPayload } from '../../../types';
+import type { RegisterResponseData, LoginResponseData, VerifyEmailResponseData, RefreshResponseData } from '../../../types/authResponses';
 
 export interface IAuthService {
-    register(payload: RegisterPayload, confirmPassword?: string): Promise<any>;
-    login(payload: LoginPayload): Promise<any>;
-    logout(): Promise<any>;
-    verifyEmail(token: string): Promise<VerifyEmailResponseData>;
-    refreshToken(): Promise<any>;
+    register(payload: RegisterPayload, confirmPassword?: string): Promise<RegisterResponseData>;
+    login(payload: LoginPayload): Promise<LoginResponseData>;
+    logout(): Promise<void>;
+    verifyEmail(data: VerifyEmailPayload): Promise<VerifyEmailResponseData>;
+    // sendEmailVerificationLink(data: EmailVerificationLinkPayload): Promise<EmailVerificationLinkResponseData>;
+    // forgotPassword(data: ForgotPasswordPayload): Promise<void>;
+    // resetPassword(data: ResetPasswordPayload): Promise<void>;
+    refreshToken(): Promise<RefreshResponseData>;
 };

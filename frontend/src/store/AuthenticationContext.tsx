@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import STORAGE_KEYS from "../constants/storageKeys";
 import { authService } from "../features/auth/authModule";
 import env from "../config/env";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthenticationContextType {
     isAuthenticated: boolean;
@@ -11,6 +12,7 @@ interface AuthenticationContextType {
 const AuthenticationContext = createContext<AuthenticationContextType | undefined>(undefined);
 
 export function AuthenticationProvider({ children }: { children: ReactNode }) {
+    const queryClient = useQueryClient();
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
         const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
         return !!token;
@@ -19,6 +21,7 @@ export function AuthenticationProvider({ children }: { children: ReactNode }) {
     // Handle Global Logout Event (from Interceptor)
     useEffect(() => {
         const handleLogout = () => {
+            queryClient.clear();
             setIsAuthenticated(false);
             localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         };

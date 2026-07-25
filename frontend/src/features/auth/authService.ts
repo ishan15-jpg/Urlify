@@ -1,5 +1,5 @@
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
-import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload } from '../../types';
+import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 import type { IAuthService } from './interfaces/authServiceInterface';
 import type { EmailVerificationLinkResponseData, RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponses';
@@ -102,5 +102,9 @@ export default class AuthService implements IAuthService {
   public async refreshToken(): Promise<RefreshResponseData> {
     const response = await this.authRepository.refreshToken();
     return response.data;
+  }
+
+  public async forgotPassword(payload: ForgotPasswordPayload): Promise<void> {
+    await this.authRepository.forgotPassword({ email: payload.email });
   }
 };

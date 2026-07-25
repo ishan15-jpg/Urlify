@@ -1,7 +1,11 @@
 import { useAccount } from '../hooks/useAccount';
 import AccountSettingsForm from './AccountSettingsForm';
 
-export default function AccountProfile() {
+interface Props {
+  renderActions?: (email: string, isEditing: boolean, isEmailVerified: boolean) => React.ReactNode;
+}
+
+export default function AccountProfile({ renderActions }: Props) {
   const { data, isLoading, error } = useAccount();
 
   if (isLoading) {
@@ -42,5 +46,5 @@ export default function AccountProfile() {
     );
   }
 
-  return <AccountSettingsForm profile={data} />;
+  return <AccountSettingsForm profile={data} renderActions={renderActions} />;
 }

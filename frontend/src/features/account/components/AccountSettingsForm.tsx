@@ -1,13 +1,12 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { type User } from '../../../types';
-import VerifyEmailButton from '../../auth/components/VerifyEmailButton';
 
 interface Props {
   profile: User;
+  renderActions?: (email: string, isEditing: boolean, isEmailVerified: boolean) => React.ReactNode;
 }
 
-function AccountSettingsForm({ profile }: Props) {
+function AccountSettingsForm({ profile, renderActions }: Props) {
   const [fullName, setFullName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
   const [isEmailVerified, setIsEmailVerified] = useState(profile.isEmailVerified);
@@ -42,9 +41,6 @@ function AccountSettingsForm({ profile }: Props) {
     // TODO: integrate with API
     setIsEditing(false);
   };
-
-
-  const handlePasswordChange = () => {};
 
   return (
     <>
@@ -199,18 +195,7 @@ function AccountSettingsForm({ profile }: Props) {
       </div>
 
       {/* Action Buttons below the card */}
-      <div className="flex justify-between flex-nowrap gap-4 mt-6">
-        <Link to={"/change-password"}
-        onClick={handlePasswordChange}
-        className={`flex items-center justify-center gap-2 border border-outline-variant text-on-surface-variant font-bold max-[500px]:flex-1 max-[500px]:px-4 max-[500px]:py-3 max-[500px]:text-xs px-8 py-4 rounded-lg hover:border-primary hover:text-primary hover:bg-surface-container-high transition-all active:scale-95 ${isEditing ? 'pointer-events-none cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-        >
-        <span className="material-symbols-outlined text-[20px] max-[500px]:text-[16px]">lock</span>
-          Change Password
-        </Link>
-        {!isEmailVerified && (
-          <VerifyEmailButton email={email} disabled={isEditing} />
-        )}
-      </div>
+      {renderActions && renderActions(email, isEditing, isEmailVerified)}
     </>
   );
 }

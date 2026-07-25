@@ -1,5 +1,7 @@
 import { Link, Navigate } from 'react-router-dom';
 import AccountProfile from '../features/account/components/AccountProfile';
+import ChangePasswordButton from '../features/auth/components/ChangePasswordButton';
+import VerifyEmailButton from '../features/auth/components/VerifyEmailButton';
 import { useAuthentication } from '../store/AuthenticationContext';
 import MainLayout from '../layouts/MainLayout';
 
@@ -39,7 +41,14 @@ export default function AccountSettings() {
         </div>
 
         {/* Feature Component */}
-        <AccountProfile />
+        <AccountProfile 
+          renderActions={(email, isEditing, isEmailVerified) => (
+            <div className="flex justify-between flex-nowrap gap-4 mt-6">
+              <ChangePasswordButton disabled={isEditing} />
+              {!isEmailVerified && <VerifyEmailButton email={email} disabled={isEditing} />}
+            </div>
+          )}
+        />
       </main>
     </MainLayout>
   );

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAccount } from '../../account/hooks/useAccount';
+import { useForgotPassword } from '../hooks/useForgotPassword';
 
 function PasswordChangeForm() {
   const [oldPassword, setOldPassword] = useState('');
@@ -9,16 +11,9 @@ function PasswordChangeForm() {
   const [isChanging, setIsChanging] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsChanging(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsChanging(false);
-      setIsSuccess(true);
-    }, 1500);
-  };
+  const { data: profile, isLoading: isProfileLoading } = useAccount();
+
+  const { handleForgotPassword, handleChange, mutation: forgotPasswordMutation } = useForgotPassword({ profile, setIsChanging, setIsSuccess });
 
   return (
     <main className="flex-grow flex flex-col items-center justify-center px-[var(--spacing-gutter)] py-16 relative overflow-hidden">
@@ -39,7 +34,14 @@ function PasswordChangeForm() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="block text-label-md font-semibold text-on-surface-variant" htmlFor="old-password">Old Password</label>
-                <Link className="text-primary text-label-sm hover:underline font-semibold" to="/reset-password">Forgot Password?</Link>
+                <button 
+                  type="button" 
+                  onClick={handleForgotPassword}
+                  disabled={isProfileLoading || forgotPasswordMutation.isPending}
+                  className="text-primary text-label-sm hover:underline font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {(isProfileLoading || forgotPasswordMutation.isPending) ? 'Sending...' : 'Forgot Password?'}
+                </button>
               </div>
               <div className="relative">
                 <input 

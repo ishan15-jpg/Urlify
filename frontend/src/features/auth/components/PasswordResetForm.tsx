@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { Link } from 'react-router-dom';
+import { useResetPassword } from '../hooks/useResetPassword';
+import toast from 'react-hot-toast';
 
-function PasswordResetForm(){
+interface Props {
+  token: string;
+}
+
+function PasswordResetForm({ token }: Props) {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isResetting, setIsResetting] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
+    const { mutation } = useResetPassword();
 
-    const handleReset = (e: React.FormEvent) => {
+    const handleReset = (e: React.SubmitEvent) => {
         e.preventDefault();
-        setIsResetting(true);
         
-        // Simulate API call
-        setTimeout(() => {
-        setIsResetting(false);
-        setIsSuccess(true);
-        }, 1500);
+        if (newPassword !== confirmPassword) {
+            toast.error('Passwords do not match.');
+            return;
+        }
+
+        mutation.mutate({ token, newPassword });
     };
 
     return (
@@ -85,16 +90,16 @@ function PasswordResetForm(){
               <div className="pt-4">
                 <button 
                   className={`w-full text-label-md font-bold py-4 rounded-lg hover:brightness-110 active:scale-[0.98] transition-all flex justify-center items-center gap-2 ${
-                    isSuccess ? 'bg-on-tertiary-fixed-variant text-white' : 'bg-primary-container text-on-primary-container'
+                    mutation.isSuccess ? 'bg-on-tertiary-fixed-variant text-white' : 'bg-primary-container text-on-primary-container'
                   }`} 
                   type="submit"
-                  disabled={isResetting || isSuccess}
+                  disabled={mutation.isPending || mutation.isSuccess}
                 >
-                  {isResetting ? (
+                  {mutation.isPending ? (
                     <>
                       <span className="animate-spin material-symbols-outlined text-[20px]">progress_activity</span> Resetting...
                     </>
-                  ) : isSuccess ? (
+                  ) : mutation.isSuccess ? (
                     <>
                       <span className="material-symbols-outlined text-[20px]">check</span> Password Updated
                     </>
@@ -103,7 +108,7 @@ function PasswordResetForm(){
                   )}
                 </button>
                 
-                {isSuccess && (
+                {mutation.isSuccess && (
                   <div className="mt-6 text-center animate-in fade-in slide-in-from-top-2 duration-300">
                     <Link to="/login" className="inline-flex items-center gap-1 text-label-md font-bold text-primary hover:underline">
                       Return to Login

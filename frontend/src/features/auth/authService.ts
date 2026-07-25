@@ -1,5 +1,5 @@
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
-import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload } from '../../types';
+import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload, ResetPasswordPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 import type { IAuthService } from './interfaces/authServiceInterface';
 import type { EmailVerificationLinkResponseData, RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponses';
@@ -106,5 +106,28 @@ export default class AuthService implements IAuthService {
 
   public async forgotPassword(payload: ForgotPasswordPayload): Promise<void> {
     await this.authRepository.forgotPassword({ email: payload.email });
+  }
+
+  public async resetPassword(payload: ResetPasswordPayload): Promise<void> {
+    const errors: FieldErrors = {};
+
+    if (!payload.token) errors.password = 'Reset token is required';
+    if (!payload.newPassword) {
+      errors.password = 'New password is required';
+    } else {
+      const passwordError = validatePassword(payload.newPassword);
+      if (passwordError) {
+        errors.password = passwordError;
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      throw { name: 'ValidationError', fieldErrors: errors };
+    }
+
+    await this.authRepository.resetPassword({
+      token: payload.token,
+      newPassword: payload.newPassword
+    });
   }
 };

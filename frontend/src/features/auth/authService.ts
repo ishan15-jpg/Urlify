@@ -1,5 +1,5 @@
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
-import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload, ResetPasswordPayload } from '../../types';
+import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload, ResetPasswordPayload, UpdatePasswordPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 import type { IAuthService } from './interfaces/authServiceInterface';
 import type { EmailVerificationLinkResponseData, RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponse';
@@ -8,6 +8,8 @@ export interface FieldErrors {
   name?: string;
   email?: string;
   password?: string;
+  oldPassword?: string;
+  newPassword?: string;
   confirmPassword?: string;
 }
 
@@ -127,6 +129,32 @@ export default class AuthService implements IAuthService {
 
     await this.authRepository.resetPassword({
       token: payload.token,
+      newPassword: payload.newPassword
+    });
+  }
+
+  public async updatePassword(payload: UpdatePasswordPayload): Promise<void> {
+    const errors: FieldErrors = {};
+
+    console.log(payload)
+
+    if (!payload.oldPassword) errors.oldPassword = 'Password is required';
+    if (!payload.newPassword) errors.newPassword = 'Password is required';
+
+    if (payload.oldPassword && !validatePassword(payload.oldPassword)) {
+      errors.oldPassword = 'Invalid password format';
+    }
+
+    if (payload.newPassword && !validatePassword(payload.newPassword)) {
+      errors.newPassword = 'Invalid password format';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      throw { name: 'ValidationError', fieldErrors: errors };
+    }
+
+    await this.authRepository.updatePassword({
+      oldPassword: payload.oldPassword,
       newPassword: payload.newPassword
     });
   }

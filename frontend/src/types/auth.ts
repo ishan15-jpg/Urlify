@@ -25,3 +25,8 @@ export interface ResetPasswordPayload {
   token?: string;
   newPassword?: string;
 }
+
+export interface UpdatePasswordPayload {
+  oldPassword: string;
+  newPassword: string;
+}

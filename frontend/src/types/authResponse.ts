@@ -37,4 +37,3 @@ export interface RefreshResponseData {
   accessToken: string;
   expiresIn: number;
 }
-

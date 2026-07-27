@@ -5,7 +5,8 @@ import type {
   EmailVerificationLinkPayload,
   VerifyEmailPayload,
   ForgotPasswordPayload,
-  ResetPasswordPayload
+  ResetPasswordPayload,
+  UpdatePasswordPayload
 } from '../../types';
 import type { ApiResponse } from '../../types/apiResponse';
 import type { LoginResponseData, VerifyEmailResponseData, RegisterResponseData, EmailVerificationLinkResponseData, RefreshResponseData } from '../../types/authResponse';
@@ -74,5 +75,12 @@ export default class AuthRepository implements IAuthRepository {
    */
   public async refreshToken(): Promise<ApiResponse<RefreshResponseData>> {
     return this.apiClient.post<ApiResponse<RefreshResponseData>>('/auth/refresh');
+  }
+
+  /**
+   * Refreshes the access token.
+   */
+  public async updatePassword(data: UpdatePasswordPayload): Promise<ApiResponse<null>> {
+    return this.apiClient.post<ApiResponse<null>>('/auth/update-password', data);
   }
 }

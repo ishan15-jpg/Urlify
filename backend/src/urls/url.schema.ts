@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const shortenUrlSchema = z.object({
   originalUrl: z.url('originalUrl must be a valid URL'),
-  expiresAt: z.number().int().positive('expiresAt must be a positive integer').optional(),
+  expiresAt: z.number().int().positive('expiresAt must be a positive integer').nullable(),
 });
 
 export type ShortenUrlSchemaType = z.infer<typeof shortenUrlSchema>;

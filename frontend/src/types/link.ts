@@ -15,7 +15,15 @@ export interface Pagination {
   limit: number;
 }
 
-export interface LinksResponseData {
+export interface GetLinksResponseData {
   shortUrls: ShortUrl[];
   pagination: Pagination;
+}
+
+export interface ShortenUrlResponseData {
+  shortCode: string;
+  shortUrl: string;
+  originalUrl: string;
+  expiresAt: string;
+  createdAt: string;
 }

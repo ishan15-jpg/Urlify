@@ -1,14 +1,14 @@
-import type { 
-  IHttpClient, 
-  LoginPayload, 
-  RegisterPayload, 
-  EmailVerificationLinkPayload, 
-  VerifyEmailPayload, 
-  ForgotPasswordPayload, 
-  ResetPasswordPayload 
+import type {
+  IHttpClient,
+  LoginPayload,
+  RegisterPayload,
+  EmailVerificationLinkPayload,
+  VerifyEmailPayload,
+  ForgotPasswordPayload,
+  ResetPasswordPayload
 } from '../../types';
 import type { ApiResponse } from '../../types/apiResponse';
-import type { LoginResponseData, VerifyEmailResponseData, RegisterResponseData, EmailVerificationLinkResponseData, RefreshResponseData } from '../../types/authResponses';
+import type { LoginResponseData, VerifyEmailResponseData, RegisterResponseData, EmailVerificationLinkResponseData, RefreshResponseData } from '../../types/authResponse';
 import type { IAuthRepository } from './interfaces/authRepositoryInterface';
 
 // --- AuthRepository implementation ---

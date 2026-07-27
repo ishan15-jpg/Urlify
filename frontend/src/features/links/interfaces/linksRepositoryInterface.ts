@@ -1,5 +1,4 @@
-import { type LinksResponseData } from "../../../types";
-import type { ApiResponse } from "../../../types/apiResponse";
+import type { GetLinksResponseData, ShortenUrlResponseData, ApiResponse } from "../../../types";
 
 export interface ILinksRepository {
   /**
@@ -7,5 +6,13 @@ export interface ILinksRepository {
    * @param page Page number
    * @param limit Items per page
    */
-  getLinks(page?: number, limit?: number): Promise<ApiResponse<LinksResponseData>>;
+  getLinks(page?: number, limit?: number): Promise<ApiResponse<GetLinksResponseData>>;
+
+  /**
+   * Shortens a given URL.
+   * @param originalUrl The original long URL
+   * @param customAlias Optional custom alias for the short URL
+   * @param expiresAt Optional expiration in days
+   */
+  shortenUrl(originalUrl: string, customAlias: string, expiresAt?: number | null): Promise<ApiResponse<ShortenUrlResponseData>>;
 }

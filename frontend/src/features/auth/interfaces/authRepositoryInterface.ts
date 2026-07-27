@@ -1,6 +1,6 @@
 import type { RegisterPayload, LoginPayload, EmailVerificationLinkPayload, VerifyEmailPayload, ForgotPasswordPayload, ResetPasswordPayload } from '../../../types';
 import type { ApiResponse } from '../../../types/apiResponse';
-import type { EmailVerificationLinkResponseData, LoginResponseData, RefreshResponseData, RegisterResponseData, VerifyEmailResponseData } from '../../../types/authResponses';
+import type { EmailVerificationLinkResponseData, LoginResponseData, RefreshResponseData, RegisterResponseData, VerifyEmailResponseData } from '../../../types/authResponse';
 
 export interface IAuthRepository {
   login: (data: LoginPayload) => Promise<ApiResponse<LoginResponseData>>;

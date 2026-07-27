@@ -1,5 +1,5 @@
 import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload, ResetPasswordPayload } from '../../../types';
-import type { RegisterResponseData, LoginResponseData, VerifyEmailResponseData, RefreshResponseData, EmailVerificationLinkResponseData } from '../../../types/authResponses';
+import type { RegisterResponseData, LoginResponseData, VerifyEmailResponseData, RefreshResponseData, EmailVerificationLinkResponseData } from '../../../types/authResponse';
 
 export interface IAuthService {
     register(payload: RegisterPayload, confirmPassword?: string): Promise<RegisterResponseData>;

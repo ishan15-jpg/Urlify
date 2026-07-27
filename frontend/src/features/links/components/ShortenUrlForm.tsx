@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { useShortenUrl } from '../hooks/useShortenUrl';
 
 export default function ShortenUrlForm() {
   const [urlValue, setUrlValue] = useState('');
@@ -6,29 +8,28 @@ export default function ShortenUrlForm() {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [expirationMode, setExpirationMode] = useState('never');
   const [customDays, setCustomDays] = useState('');
+  const { shorten, isLoading, error } = useShortenUrl();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleShorten = () => {
+  const handleShorten = async () => {
     if (urlValue.trim().length === 0) {
       setHasError(true);
       setTimeout(() => setHasError(false), 1000);
       return;
     }
 
-    let expiresAt: string | undefined;
-    
-    if (expirationMode !== 'never') {
-      const days = expirationMode === 'custom' ? parseInt(customDays, 10) : parseInt(expirationMode, 10);
-      if (!isNaN(days) && days > 0) {
-        const date = new Date();
-        date.setDate(date.getDate() + days);
-        expiresAt = date.toISOString();
-      }
+    try {
+      await shorten(urlValue, expirationMode, customDays);
+      setUrlValue('');
+      setExpirationMode('never');
+      setCustomDays('');
+      setIsAdvancedOpen(false);
+      toast.success('URL shortened successfully!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to shorten URL');
+      console.error('Failed to shorten URL:', err);
     }
-
-    // TODO: integrate with API. payload will contain { originalUrl: urlValue, expiresAt }
-    console.log('Shorten request payload:', { originalUrl: urlValue, expiresAt });
   };
 
   const handlePaste = async () => {
@@ -60,7 +61,14 @@ export default function ShortenUrlForm() {
           placeholder="Paste your long link here..."
           value={urlValue}
           onChange={(e) => setUrlValue(e.target.value)}
+          disabled={isLoading}
         />
+        
+        {error && (
+          <div className="text-error text-label-md px-6 pb-2">
+            {error}
+          </div>
+        )}
 
         {/* Advanced Options Panel */}
         <div 
@@ -136,11 +144,12 @@ export default function ShortenUrlForm() {
           </div>
 
           <button
-            className="bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-bold px-8 py-4 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+            className="bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-bold px-8 py-4 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
             onClick={handleShorten}
+            disabled={isLoading}
           >
-            <span>Shorten</span>
-            <span className="material-symbols-outlined">auto_fix_high</span>
+            <span>{isLoading ? 'Shortening...' : 'Shorten'}</span>
+            {!isLoading && <span className="material-symbols-outlined">auto_fix_high</span>}
           </button>
         </div>
       </div>

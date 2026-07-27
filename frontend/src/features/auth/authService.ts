@@ -2,7 +2,7 @@ import type { IAuthRepository } from './interfaces/authRepositoryInterface';
 import type { RegisterPayload, LoginPayload, VerifyEmailPayload, EmailVerificationLinkPayload, ForgotPasswordPayload, ResetPasswordPayload } from '../../types';
 import { isValidEmail, validatePassword } from '../../utils/validators';
 import type { IAuthService } from './interfaces/authServiceInterface';
-import type { EmailVerificationLinkResponseData, RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponses';
+import type { EmailVerificationLinkResponseData, RefreshResponseData, VerifyEmailResponseData } from '../../types/authResponse';
 
 export interface FieldErrors {
   name?: string;
@@ -14,7 +14,7 @@ export interface FieldErrors {
 export default class AuthService implements IAuthService {
   private authRepository: IAuthRepository;
 
-  constructor(authRepository: IAuthRepository){
+  constructor(authRepository: IAuthRepository) {
     this.authRepository = authRepository;
   }
   /**

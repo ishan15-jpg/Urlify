@@ -1,4 +1,4 @@
-import type { LinksResponseData } from '../../../types';
+import type { GetLinksResponseData, ShortenUrlResponseData } from '../../../types';
 
 export interface ILinksService {
   /**
@@ -6,5 +6,13 @@ export interface ILinksService {
    * @param page Page number
    * @param limit Items per page
    */
-  getLinks(page?: number, limit?: number): Promise<LinksResponseData>;
+  getLinks(page?: number, limit?: number): Promise<GetLinksResponseData>;
+
+  /**
+   * Shortens a given URL.
+   * @param originalUrl The original long URL
+   * @param expirationMode The expiration mode (never, custom, etc)
+   * @param customDays The number of custom days
+   */
+  shortenUrl(originalUrl: string, expirationMode: string, customDays: string): Promise<ShortenUrlResponseData>;
 }

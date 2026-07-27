@@ -138,15 +138,22 @@ export default class AuthService implements IAuthService {
 
     console.log(payload)
 
-    if (!payload.oldPassword) errors.oldPassword = 'Password is required';
-    if (!payload.newPassword) errors.newPassword = 'Password is required';
-
-    if (payload.oldPassword && !validatePassword(payload.oldPassword)) {
-      errors.oldPassword = 'Invalid password format';
+    if (!payload.oldPassword) {
+      errors.password = 'Old password is required';
+    } else {
+      const passwordError = validatePassword(payload.oldPassword);
+      if (passwordError) {
+        errors.oldPassword = passwordError;
+      }
     }
 
-    if (payload.newPassword && !validatePassword(payload.newPassword)) {
-      errors.newPassword = 'Invalid password format';
+    if (!payload.newPassword) {
+      errors.password = 'New password is required';
+    } else {
+      const passwordError = validatePassword(payload.newPassword);
+      if (passwordError) {
+        errors.newPassword = passwordError;
+      }
     }
 
     if (Object.keys(errors).length > 0) {

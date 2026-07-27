@@ -34,9 +34,13 @@ export const useUpdatePassword = () => {
                 setFieldErrors(err.fieldErrors);
             } else {
                 const message = err?.response?.data?.message || err?.message || 'An error occurred while updating password';
-                setGlobalError(message);
                 toast.error(message);
             }
+            setFormData(prev => ({
+                ...prev,
+                newPassword: '',
+                oldPassword: ''
+            }))
         },
     });
 

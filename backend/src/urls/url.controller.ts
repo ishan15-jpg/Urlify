@@ -8,15 +8,15 @@ export class UrlController {
 
   shortenUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { originalUrl, expirationTime } = req.body as ShortenUrlRequestDto;
+      const { originalUrl, expiresAt } = req.body as ShortenUrlRequestDto;
       // If user is authenticated, req.user will be populated. If not, it is undefined.
       const userId = req.user ? req.user.userId : null;
 
-      logger.info(`Shorten URL request received: ${originalUrl} for user: ${userId || 'anonymous'}, expirationTime: ${expirationTime}`);
+      logger.info(`Shorten URL request received: ${originalUrl} for user: ${userId || 'anonymous'}, expiresAt: ${expiresAt}`);
       const { url, shortCode, shortUrl } = await this.urlService.shortenUrl({
         originalUrl,
         userId,
-        expirationTime,
+        expiresAt,
       });
 
       logger.info(`URL successfully shortened: ${shortCode}`);

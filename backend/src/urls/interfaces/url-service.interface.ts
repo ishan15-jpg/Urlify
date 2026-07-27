@@ -10,7 +10,7 @@ export interface IUrlService {
   shortenUrl(params: {
     originalUrl: string;
     userId: string | null;
-    expirationTime?: number;
+    expiresAt?: number;
   }): Promise<{
     url: Url;
     shortCode: string;

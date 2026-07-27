@@ -273,7 +273,7 @@ export class AuthService implements IAuthService {
     redisClient.set(redisKey, redisValue, 'EX', 300); // 5 minutes TTL
 
     const clientUrl = process.env.CLIENT_URL;
-    const resetLink = `${clientUrl}?token=${rawToken}`;
+    const resetLink = `${clientUrl}/reset-token?token=${rawToken}`;
 
     logger.debug(`Enqueuing password reset email job to BullMQ`);
     await passwordResetQueue.add('sendPasswordResetEmail', {

@@ -15,14 +15,14 @@ export class UrlService implements IUrlService {
   async shortenUrl(params: {
     originalUrl: string;
     userId: string | null;
-    expirationTime?: number;
+    expiresAt?: number;
   }): Promise<{
     url: Url;
     shortCode: string;
     shortUrl: string;
   }> {
-    const { originalUrl, userId, expirationTime } = params;
-    logger.info(`Shortening URL: ${originalUrl} for user: ${userId || 'anonymous'}, expirationTime=${expirationTime || 'infinite'}`);
+    const { originalUrl, userId, expiresAt: expirationTime } = params;
+    logger.info(`Shortening URL: ${originalUrl} for user: ${userId || 'anonymous'}, expiresAt=${expirationTime || 'infinite'}`);
 
     if (!isValidUrl(originalUrl)) {
       logger.warn(`Invalid URL provided: ${originalUrl}`);

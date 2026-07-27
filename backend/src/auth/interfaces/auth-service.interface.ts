@@ -1,6 +1,7 @@
 import { User } from '../auth.entity';
 import { RegisterRequestDto } from '../dtos/register-request.dto';
 import { LoginRequestDto } from '../dtos/login-request.dto';
+import { UpdatePasswordRequestDto } from '../dtos/update-password-request.dto';
 
 export interface IAuthService {
   /**
@@ -53,6 +54,14 @@ export interface IAuthService {
    * @param dto - Token and new password details.
    */
   resetPassword(dto: { token: string; newPassword: string }): Promise<void>;
+
+  /**
+   * Updates a user's password.
+   *
+   * @param userId - The user's ID.
+   * @param dto - Validated update password payload.
+   */
+  updatePassword(userId: string, dto: UpdatePasswordRequestDto): Promise<void>;
 
   /**
    * Refreshes user session using a refresh token.

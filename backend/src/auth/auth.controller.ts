@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { IAuthService } from './interfaces/auth-service.interface';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { LoginRequestDto } from './dtos/login-request.dto';
+import { UpdatePasswordRequestDto } from './dtos/update-password-request.dto';
 import { toRegisterResponseDto } from './dtos/register-response.dto';
 import { toUserDto } from './dtos/login-response.dto';
 import { toAdminUserDto } from './dtos/admin-user-response.dto';
@@ -197,6 +198,37 @@ export class AuthController {
         success: true,
         statusCode: 200,
         message: 'Password reset successfully. Please log in with your new password.',
+        data: null,
+        meta: {
+          requestId: req.headers['x-request-id'] ?? null,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * POST /api/v1/auth/update-password
+   *
+   * Updates the user's password.
+   */
+  updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('Unauthorized');
+      }
+      const dto = req.body as UpdatePasswordRequestDto;
+      logger.info(`Update password request initiated for user ${req.user.userId}`);
+
+      await this.authService.updatePassword(req.user.userId, dto);
+      logger.info(`Password updated successfully for user ${req.user.userId}`);
+
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'Password updated successfully',
         data: null,
         meta: {
           requestId: req.headers['x-request-id'] ?? null,

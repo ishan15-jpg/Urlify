@@ -55,6 +55,7 @@ describe('AuthController.register', () => {
       verifyEmail: jest.fn(),
       processForgotPassword: jest.fn(),
       resetPassword: jest.fn(),
+      updatePassword: jest.fn(),
       refreshSession: jest.fn(),
       logout: jest.fn()
     };

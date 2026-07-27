@@ -3,6 +3,7 @@ import { IAuthService } from './interfaces/auth-service.interface';
 import { IAuthRepository } from './interfaces/auth-repository.interface';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { LoginRequestDto } from './dtos/login-request.dto';
+import { UpdatePasswordRequestDto } from './dtos/update-password-request.dto';
 import { User } from './auth.entity';
 import { ConflictError } from '../shared/errors/conflict.error';
 import { UnauthorizedError } from '../shared/errors/unauthorized.error';
@@ -344,6 +345,35 @@ export class AuthService implements IAuthService {
     this.cleanupResetToken(redisKey, tokenId).catch((err) => {
       logger.error(`Error deleting reset token during background cleanup:`, err);
     });
+  }
+
+  /**
+   * Updates a user's password.
+   *
+   * @param userId - The user's ID.
+   * @param dto - Validated update password payload.
+   */
+  async updatePassword(userId: string, dto: UpdatePasswordRequestDto): Promise<void> {
+    const { oldPassword, newPassword } = dto;
+    logger.debug(`Update password process initiated for user ${userId}`);
+
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      logger.warn(`Update password failed: User ${userId} not found`);
+      throw new NotFoundError('User', userId);
+    }
+
+    const isMatch = await comparePassword(oldPassword, user.passwordHash);
+    if (!isMatch) {
+      logger.warn(`Update password failed: Incorrect current password for user ${userId}`);
+      throw new UnauthorizedError('Incorrect current password');
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+
+    logger.debug(`Updating user password synchronously in database`);
+    await this.authRepository.updatePassword(user.id, newPasswordHash);
+    logger.info(`Password updated synchronously for user ${user.id}`);
   }
 
   /** Background task helper to delete reset token from Redis and DB. */

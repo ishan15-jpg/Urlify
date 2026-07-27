@@ -90,6 +90,21 @@ class ValidateRequest {
     };
   }
 
+  validateUpdatePasswordRequest = (schema: z.ZodType) => {
+    return (req: Request, _res: Response, next: NextFunction) => {
+      logger.debug(`Validating update password request`)
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        logger.warn(`Update password request failed due to invalid request body`);
+        const firstMessage = result.error.issues[0]?.message || 'Invalid request body';
+        return next(new ValidationError(firstMessage, result.error.flatten()));
+      }
+      logger.debug(`Update password request validated successfully`)
+      req.body = result.data; // now typed & sanitized
+      next();
+    };
+  }
+
   validateGetUsersQuery = (schema: z.ZodType) => {
     return (req: Request, _res: Response, next: NextFunction) => {
       logger.debug(`Validating get users query parameters`);

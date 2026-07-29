@@ -8,7 +8,7 @@ function Footer() {
             Urlify
           </span>
           <p className="text-label-sm font-semibold text-on-surface-variant">
-            © 2026 Urlify. All rights reserved.
+            A url shortening service.
           </p>
         </div>
 

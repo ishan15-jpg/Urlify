@@ -135,7 +135,7 @@ export class AuthService implements IAuthService {
 
     // Push the email send job to BullMQ
     const clientUrl = process.env.CLIENT_URL;
-    const verificationLink = `${clientUrl}?token=${rawToken}`;
+    const verificationLink = `${clientUrl}/verify-email?token=${rawToken}`;
     
     logger.debug(`Enqueuing email send job to BullMQ`);
     emailQueue.add('sendVerificationEmail', {

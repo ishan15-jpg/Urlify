@@ -1,6 +1,7 @@
 import type { ILinksService } from './interfaces/linksServiceInterface';
 import type { ILinksRepository } from './interfaces/linksRepositoryInterface';
 import type { GetLinksResponseData, ShortenUrlResponseData } from '../../types';
+import { isValidUrl } from '../../utils/validators';
 
 export default class LinksService implements ILinksService {
   private linksRepository: ILinksRepository;
@@ -15,6 +16,10 @@ export default class LinksService implements ILinksService {
   }
 
   public async shortenUrl(originalUrl: string, expirationMode: string, customDays: string): Promise<ShortenUrlResponseData> {
+    if (!isValidUrl(originalUrl)) {
+      throw new Error('Invalid URL format');
+    }
+
     let expiresAt: number | null = null;
 
     if (expirationMode !== 'never') {

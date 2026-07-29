@@ -28,7 +28,6 @@ export default function ShortenUrlForm() {
       toast.success('URL shortened successfully!');
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to shorten URL');
-      console.error('Failed to shorten URL:', err);
     }
   };
 
@@ -49,7 +48,7 @@ export default function ShortenUrlForm() {
 
       <div
         className={`relative flex flex-col items-stretch bg-surface-container-lowest border rounded-xl p-4 shadow-sm transition-all
-          ${hasError
+          ${hasError || error
             ? 'border-error ring-2 ring-error/20'
             : 'border-outline-variant focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15'
           }`}
@@ -63,12 +62,6 @@ export default function ShortenUrlForm() {
           onChange={(e) => setUrlValue(e.target.value)}
           disabled={isLoading}
         />
-        
-        {error && (
-          <div className="text-error text-label-md px-6 pb-2">
-            {error}
-          </div>
-        )}
 
         {/* Advanced Options Panel */}
         <div 

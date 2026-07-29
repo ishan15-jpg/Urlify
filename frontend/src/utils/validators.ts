@@ -18,3 +18,12 @@ export const validatePassword = (password: string): string | null => {
   }
   return null;
 };
+
+export const isValidUrl = (urlString: string): boolean => {
+  try {
+    const url = new URL(urlString);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch (e) {
+    return false;
+  }
+};

@@ -226,6 +226,9 @@ export class AuthService implements IAuthService {
     if (!updatedUser) {
       throw new NotFoundError('User', user.id);
     }
+
+    const redisKeyForUser = `user_profile:${updatedUser.id}`;
+    await redisClient.set(redisKeyForUser, JSON.stringify(updatedUser), 'EX', 900);
     return updatedUser;
   }
 
@@ -274,7 +277,7 @@ export class AuthService implements IAuthService {
     redisClient.set(redisKey, redisValue, 'EX', 300); // 5 minutes TTL
 
     const clientUrl = process.env.CLIENT_URL;
-    const resetLink = `${clientUrl}/reset-token?token=${rawToken}`;
+    const resetLink = `${clientUrl}/reset-password?token=${rawToken}`;
 
     logger.debug(`Enqueuing password reset email job to BullMQ`);
     await passwordResetQueue.add('sendPasswordResetEmail', {

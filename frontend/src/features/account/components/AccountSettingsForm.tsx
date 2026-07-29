@@ -16,21 +16,21 @@ function AccountSettingsForm({ profile, renderActions }: Props) {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Snapshot of values when entering edit mode, used for cancel/restore
-  const snapshot = useRef({ fullName: '', email: '' });
+  // const snapshot = useRef({ fullName: '', email: '' });
 
   // Track the last verified email so we can detect email changes
   const verifiedEmail = useRef(profile.email);
 
-  const enterEditMode = () => {
-    snapshot.current = { fullName, email };
-    setIsEditing(true);
-  };
+  // const enterEditMode = () => {
+  //   snapshot.current = { fullName, email };
+  //   setIsEditing(true);
+  // };
 
-  const exitEditMode = () => {
-    setFullName(snapshot.current.fullName);
-    setEmail(snapshot.current.email);
-    setIsEditing(false);
-  };
+  // const exitEditMode = () => {
+  //   setFullName(snapshot.current.fullName);
+  //   setEmail(snapshot.current.email);
+  //   setIsEditing(false);
+  // };
 
   const handleSubmit = (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,28 +68,7 @@ function AccountSettingsForm({ profile, renderActions }: Props) {
 
       {/* Settings Form Card */}
       <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl p-10 md:p-10 shadow-sm">
-        {/* Top-right corner: Edit / Close button */}
-        <div className="absolute top-4 right-4 md:top-6 md:right-6">
-          {isEditing ? (
-            <button
-              type="button"
-              onClick={exitEditMode}
-              className="flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-error transition-all cursor-pointer active:scale-90"
-              aria-label="Cancel editing"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={enterEditMode}
-              className="flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-all cursor-pointer active:scale-90"
-              aria-label="Edit profile"
-            >
-              <span className="material-symbols-outlined">edit</span>
-            </button>
-          )}
-        </div>
+
 
         <form className="space-y-8 max-w-2xl" onSubmit={handleSubmit}>
           {/* Full Name Field */}

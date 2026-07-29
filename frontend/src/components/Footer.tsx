@@ -12,33 +12,18 @@ function Footer() {
           </p>
         </div>
 
-        {/* Right: Nav Links */}
-        <nav className="flex flex-wrap justify-center gap-6">
-          <a
-            className="text-label-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
-            Privacy Policy
-          </a>
-          <a
-            className="text-label-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
-            Terms of Service
-          </a>
-          <a
-            className="text-label-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
-            API Docs
-          </a>
-          <a
-            className="text-label-sm text-on-surface-variant hover:text-primary transition-colors"
-            href="#"
-          >
-            Support
-          </a>
-        </nav>
+        <div className="mb-6 md:mb-0 text-center md:text-left">
+          <span className="block text-headline-md font-bold text-primary mb-2">
+            <a
+              href="https://github.com/ishan15-jpg/urlify"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Github Repository
+            </a>
+          </span>
+        </div>
+
       </div>
     </footer>
   );

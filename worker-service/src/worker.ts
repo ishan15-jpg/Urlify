@@ -39,7 +39,7 @@ async function gracefulShutdown(signal: string) {
   const forceExitTimeout = setTimeout(() => {
     logger.error('Worker service graceful shutdown timed out. Forcing exit.');
     process.exit(1);
-  }, 10_000);
+  }, 10000);
 
   try {
     await Promise.all([

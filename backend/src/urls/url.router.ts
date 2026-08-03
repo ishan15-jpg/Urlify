@@ -4,6 +4,23 @@ import { optionalAuthenticate, authenticate } from '../shared/middlewares/auth.m
 import validate from '../shared/middlewares/validate.middleware';
 import { shortenUrlSchema } from './url.schema';
 import { logger } from '../shared/utils/logger';
+import { createRateLimiter } from '../shared/middlewares/rate-limiter.middleware';
+
+const shortenLimiter = createRateLimiter({
+  capacity: (req) => {
+    if (req.user) {
+      return Number(process.env.AUTH_SHORTEN_RATE_LIMIT_CAPACITY) || 1000000;
+    }
+    return 10;
+  },
+  windowMs: (req) => {
+    if (req.user) {
+      return Number(process.env.AUTH_SHORTEN_RATE_LIMIT_WINDOW) || 60 * 60 * 1000;
+    }
+    return 60 * 60 * 1000; // 1 hour
+  },
+  keyGenerator: (req) => `shorten:${req.user?.userId || req.ip}`
+});
 
 export const urlRouter = Router();
 
@@ -12,6 +29,7 @@ export const urlRouter = Router();
 urlRouter.post('/shorten',
   (_, __, next) => { logger.info(`POST /shorten request received`); next(); },
   optionalAuthenticate,
+  shortenLimiter,
   validate.validateShortenUrlRequest(shortenUrlSchema),
   urlController.shortenUrl
 );

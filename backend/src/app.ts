@@ -9,6 +9,13 @@ import { usersRouter } from './users';
 import { urlRouter } from './urls/url.router';
 import { urlController } from './urls/url.module';
 import cors from 'cors';
+import { createRateLimiter } from './shared/middlewares/rate-limiter.middleware';
+
+const redirectLimiter = createRateLimiter({
+  capacity: 100,
+  windowMs: 60 * 1000, // 1 minute
+  keyGenerator: (req) => `redirect:${req.ip}`
+});
 
 const app = express();
 app.use(cors({
@@ -44,7 +51,10 @@ app.get('/:shortCode', (req, res, next) => {
   if (reservedKeywords.has(shortCode)) {
     return next();
   }
-  urlController.redirectToOriginalUrl(req, res, next);
+  redirectLimiter(req, res, (err?: any) => {
+    if (err) return next(err);
+    urlController.redirectToOriginalUrl(req, res, next);
+  });
 });
 
 app.use(errorMiddleware); // must be registered last

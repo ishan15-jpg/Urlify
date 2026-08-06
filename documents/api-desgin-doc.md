@@ -1,6 +1,6 @@
 # API Documentation
 
-This document covers two services sharing the same API gateway and conventions: **Authify** (authentication & user management) and **Snip** (URL shortening).
+This document covers **Urlify** (URL shortening service).
 
 ## Base URL
 
